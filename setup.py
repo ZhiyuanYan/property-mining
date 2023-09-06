@@ -14,7 +14,7 @@ class custom_develop(develop):
 
         # build trex lib and custom tf ops
         folders = [
-            os.path.join(BASEPATH, 'metal/spec_encoder'),
+            os.path.join(BASEPATH, 'property_mining/spec_encoder'),
         ]
         for folder in folders:
             os.chdir(folder)
@@ -32,7 +32,7 @@ class custom_install(install):
 
 
 setup(
-    name='metal',
+    name='property_mining',
     packages=['metal'],
     install_requires=[
         'torch',

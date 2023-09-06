@@ -4,11 +4,11 @@ import os
 import sys
 from tqdm import tqdm
 
-from metal.common.cmd_args import cmd_args, tic, toc
-from metal.common.dataset import Dataset
-from metal.common.spec_tree import SygusInstance
-from metal.parser.sygus_parser import SyExp
-from metal.solver.cegar2qbf import CegarQBF
+from common.cmd_args import cmd_args, tic, toc
+from common.dataset import Dataset
+from common.spec_tree import SygusInstance
+from parser_syg.sygus_parser import SyExp
+from solver.cegar2qbf import CegarQBF
 
 
 class QBFSearch(object):

@@ -8,8 +8,8 @@ from torch.nn.parameter import Parameter
 import torch.nn as nn
 import torch.nn.functional as F
 
-from metal.common.cmd_args import cmd_args
-from metal.common.pytorch_util import weights_init, gnn_spmm
+from common.cmd_args import cmd_args
+from common.pytorch_util import weights_init, gnn_spmm
 
 
 class LogicEncoder(nn.Module):

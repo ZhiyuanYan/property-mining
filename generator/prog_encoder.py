@@ -14,9 +14,9 @@ import torch.nn.functional as F
 import torch.optim as optim
 from itertools import chain
 
-from metal.common.constants import NUM_EDGE_TYPES, LIST_PREDICATES, LIST_OP, MAX_DEPTH, MAX_AND, MAX_OR
-from metal.common.cmd_args import cmd_args
-from metal.common.pytorch_util import weights_init, gnn_spmm
+from common.constants import NUM_EDGE_TYPES, LIST_PREDICATES, LIST_OP, MAX_DEPTH, MAX_AND, MAX_OR
+from common.cmd_args import cmd_args
+from common.pytorch_util import weights_init, gnn_spmm
 
 class LogicEncoder(nn.Module):
     def __init__(self, latent_dim):

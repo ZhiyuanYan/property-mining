@@ -3,7 +3,7 @@
 import os
 import sys
 
-from metal.parser.sygus_parser import SyExp
+from parser_syg.sygus_parser import SyExp
 from cegar2qbf import qbf, CegarQBF
 from tseitin_cnf import TseitinCNF
 

@@ -5,8 +5,8 @@ import sys
 import os 
 
 from pysat.solvers import Minisat22
-from metal.parser.sygus_parser import SyExp
-from metal.solver.tseitin_cnf import TseitinCNF
+from parser_syg.sygus_parser import SyExp
+from solver.tseitin_cnf import TseitinCNF
 
 
 def deduplicate(cnf):

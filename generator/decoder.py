@@ -8,13 +8,13 @@ from torch.nn.parameter import Parameter
 import torch.nn as nn
 import torch.nn.functional as F
 
-from metal.common.constants import TYPES_IN_SPEC
-from metal.common.cmd_args import cmd_args
-from metal.common.pytorch_util import weights_init, to_num
-from metal.generator.tree_encoder import LogicEncoder
-from metal.parser.sygus_parser import SyExp
+from common.constants import TYPES_IN_SPEC
+from common.cmd_args import cmd_args
+from common.pytorch_util import weights_init, to_num
+from generator.tree_encoder import LogicEncoder
+from parser_syg.sygus_parser import SyExp
 
-import metal.common.constants as constants
+import common.constants as constants
 
 
 class RecursiveDecoder(nn.Module):
@@ -59,10 +59,10 @@ class RecursiveDecoder(nn.Module):
     def reset(self):
         self.state = None
 
-    def forward(self, env, mem, use_random, eps=0.05):
+    def forward(self, env, mem, use_random, use_supervised_learning, device,const , supervised_label = None, eps=0.05):
 
-        spectree = env.specsample.spectree
-
+        spectree = env.pg.grammar
+        having_const = False
         if env.t == 0:
             attention = self.gen_attention(mem, env) # get attention
             self.state = self.tree_encoder(mem, attention, env) # generate overall state
@@ -73,6 +73,16 @@ class RecursiveDecoder(nn.Module):
 
         syexp = env.expand_ls.pop(0)
         cfg_mapping = env.get_cfg_mapping()
+        
+        supervised_num = -1
+        if use_supervised_learning:
+            assert supervised_label is not None
+            prod_rule = spectree.productions[syexp.app]  # e.g. [['and', 'depth1', 'depth1'], ['LN29']]
+            for i in range(len(prod_rule)):
+                if supervised_label == prod_rule[i][0]:
+                    supervised_num = i 
+            assert supervised_num != -1
+            
         act_space = cfg_mapping[syexp.app][1:] # get all index except for the node itself
         avail_act_embedding = mem[act_space]
         if len(avail_act_embedding.shape) == 1:
@@ -91,7 +101,8 @@ class RecursiveDecoder(nn.Module):
         # avail_act_embedding = torch.cat(avail_act_embedding, dim=0)
 
         # choose node to add
-        act = self.choose_action(self.state, avail_act_embedding, use_random, eps)
+        act = self.choose_action(self.state, avail_act_embedding, use_random, eps, 
+                                 use_supervised_learning,supervised_num, device)
         act_embedding = torch.index_select(avail_act_embedding, 0, act)
 
         # call RewardRedistributionLSTM for prediction
@@ -103,7 +114,7 @@ class RecursiveDecoder(nn.Module):
         self.update_state(act_embedding)
 
         # expand the syexp
-        prod_rule = spectree.grammar.productions[syexp.app]  # e.g. [['and', 'depth1', 'depth1'], ['LN29']]
+        prod_rule = spectree.productions[syexp.app]  # e.g. [['and', 'depth1', 'depth1'], ['LN29']]
         act_ind = act.data.cpu()[0]
         syexp.app = prod_rule[act_ind][0]  # e.g syexp.app='and'
         arg_name_ls = prod_rule[act_ind][1:]
@@ -111,12 +122,15 @@ class RecursiveDecoder(nn.Module):
 
         # push to stack for pre-order visit
         env.expand_ls = syexp.args[::-1] + env.expand_ls
+        if(syexp.app=="const"):
+            having_const = True
+            syexp.app = "const_" + str(const)
 
-        return self.nll, value
+        return self.nll, value, having_const
 
         # self.recursive_decode(env.generated_tree, env.specsample.spectree, mem, use_random, eps)
 
-    def choose_action(self, state, cls_w, use_random, eps):
+    def choose_action(self, state, cls_w, use_random, eps, use_supervised_learning, supervised_label,device):
         """
         given current state and stack embeddings of possible nodes to add, perform softmax(dot(state, cls_w)), thus
         choosing the node to add to the tree
@@ -139,15 +153,24 @@ class RecursiveDecoder(nn.Module):
             raise NotImplementedError()
 
         ll = F.log_softmax(logits, dim=1)
-        if use_random:
+        
+        if use_supervised_learning:
+            picked = torch.tensor(supervised_label).to(device).view(-1)
+            # scores = torch.exp(ll) * (1 - eps) + eps / ll.shape[1]
+            # _, picked = torch.max(ll, 1)
+        elif use_random:
             scores = torch.exp(ll) * (1 - eps) + eps / ll.shape[1]
+            # scores_new = torch.ones_like(scores) * 0.5
             picked = torch.multinomial(scores, 1)
+        
         else:
             _, picked = torch.max(ll, 1)
 
         picked = picked.view(-1)
-
-        self.nll += F.nll_loss(ll, picked)
+        if use_supervised_learning:
+            self.nll+=F.nll_loss(ll, picked)
+        else:
+            self.nll += F.nll_loss(ll, picked)
         return picked
 
     def update_state(self, input_embedding):

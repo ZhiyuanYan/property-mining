@@ -7,10 +7,13 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
 
-from metal.common.checker import eval_result
-from metal.common.cmd_args import cmd_args
-from metal.common.spec_tree import is_tree_complete
-from metal.parser.sygus_parser import SyExp
+from common.checker import eval_result
+from common.cmd_args import cmd_args
+from common.spec_tree import is_tree_complete
+from parser_syg.sygus_parser import SyExp
+from reward.reward import *
+from reward.deduction import *
+import math
 
 class RLEnv(object):
     def __init__(self, specsample):
@@ -43,21 +46,21 @@ class RLEnv(object):
         return self.pg.spec_embedding
 
 
-def rollout(specsample, mem, decoder, rudder, avg_return, num_episode, use_random, eps):
+def rollout(specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_episode, use_random, eps):
 
     total_loss = 0.0
     rudder_loss = 0.0
     best_reward = -5.0
     best_tree = None
     acc_reward = 0.0
-
+    tackle_const = False
     # run num_episode times of episode and average out the loss for variance reduction
     for _ in range(num_episode):
 
         nll_list = []
         value_list = []
         reward_list = []
-
+        const = 0
         env = RLEnv(specsample)
         decoder.reset()
         if cmd_args.use_rudder == 1:
@@ -65,9 +68,13 @@ def rollout(specsample, mem, decoder, rudder, avg_return, num_episode, use_rando
 
         while not env.is_finished():
 
-            nll, vs = decoder(env, mem, use_random=use_random, eps=eps)
-            reward = eval_result(env.specsample, env.generated_tree) if env.is_finished() else 0.0
-
+            nll, vs , having_const = decoder(env, mem, use_random, False, device , const,  eps=eps)
+            # reward = eval_result(env.specsample, env.generated_tree) if env.is_finished() else 0.0
+            if having_const== True:
+                const = const + 1
+            reward = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg)
+            # if(env.generated_tree.to_py()=="x==x"):
+            #     print(" ")
             nll_list.append(nll)
             value_list.append(vs)
             reward_list.append(reward)
@@ -79,7 +86,7 @@ def rollout(specsample, mem, decoder, rudder, avg_return, num_episode, use_rando
             rudder_loss += rudder.get_loss(reward_list)
             reward_list = rudder.integrated_gradient(avg_return, true_return)
 
-        policy_loss, value_loss = actor_critic_loss(nll_list, value_list, reward_list)
+        policy_loss, value_loss = actor_critic_loss(nll_list, value_list, reward_list,device)
         total_loss += policy_loss + value_loss
 
         if true_return > best_reward:
@@ -93,8 +100,20 @@ def rollout(specsample, mem, decoder, rudder, avg_return, num_episode, use_rando
 
     return total_loss, rudder_loss, best_reward, best_tree, acc_reward
 
+def supervised_learning(specsample, mem, decoder, device , label ,eps):
+    env = RLEnv(specsample)
+    decoder.reset()
 
-def actor_critic_loss(nll_list, value_list, reward_list):
+    loss = 0
+    for step in range(-1, -len(label) - 1, -1):
+        nll, vs = decoder(env, mem, False, True, device,label[step],eps=eps)
+        loss +=nll
+    assert env.is_finished()
+    
+    return loss
+
+
+def actor_critic_loss(nll_list, value_list, reward_list,device):
     r = 0.0
     rewards = []
     for t in range(len(reward_list) - 1, -1, -1):
@@ -106,7 +125,7 @@ def actor_critic_loss(nll_list, value_list, reward_list):
     for t in range(len(reward_list)):
         adv = rewards[t] - value_list[t].data[0, 0]
         policy_loss += nll_list[t] * adv
-        targets.append(Variable(torch.Tensor([[rewards[t]]])))
+        targets.append(Variable(torch.Tensor([[rewards[t]]])).to(device))
 
     policy_loss /= len(reward_list)
 

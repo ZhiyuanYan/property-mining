@@ -8,11 +8,11 @@ import torch.nn.functional as F
 import numpy as np
 
 
-from metal.common.cmd_args import cmd_args
-from metal.common.pytorch_util import weights_init, to_num, glorot_uniform
-from metal.generator.tree_encoder import LogicEncoder
-from metal.parser.sygus_parser import SyExp
-import metal.common.constants as constants
+from common.cmd_args import cmd_args
+from common.pytorch_util import weights_init, to_num, glorot_uniform
+from generator.tree_encoder import LogicEncoder
+from parser_syg.sygus_parser import SyExp
+import common.constants as constants
 
 
 class RewardRedistributionLSTM(nn.Module):

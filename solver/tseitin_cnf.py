@@ -3,7 +3,7 @@
 import sys
 import os 
 
-from parser.sygus_parser import SyExp
+from parser_syg.sygus_parser import SyExp
 
 class Namespace(object):
     def __init__(self, start_id):

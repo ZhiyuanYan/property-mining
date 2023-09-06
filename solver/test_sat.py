@@ -8,7 +8,7 @@ from sat import SatProxy
 import sys
 import os 
 
-from parser.sygus_parser import SyExp, parse_sexp
+from parser_syg.sygus_parser import SyExp, parse_sexp
 
 def get_def():
     import sys

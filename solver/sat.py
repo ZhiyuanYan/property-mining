@@ -3,8 +3,8 @@ import sys
 sys.path.append('/data/zhiyuany/.local/lib/python3.8/site-packages')
 from pysat.solvers import Minisat22
 
-from metal.solver.tseitin_cnf import TseitinCNF
-from metal.parser.sygus_parser import SyExp
+from solver.tseitin_cnf import TseitinCNF
+from parser_syg.sygus_parser import SyExp
 
 #
 # this is bit tricky, as we are dealing with constraint with universal quantifier: forall x,y,z,  phi(x,y,z)
