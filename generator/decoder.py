@@ -167,10 +167,10 @@ class RecursiveDecoder(nn.Module):
             _, picked = torch.max(ll, 1)
 
         picked = picked.view(-1)
-        if use_supervised_learning:
-            self.nll+=F.nll_loss(ll, picked)
-        else:
-            self.nll += F.nll_loss(ll, picked)
+        # if use_supervised_learning:
+        #     self.nll+=F.nll_loss(ll, picked)
+        # else:
+        self.nll += F.nll_loss(ll, picked)
         return picked
 
     def update_state(self, input_embedding):

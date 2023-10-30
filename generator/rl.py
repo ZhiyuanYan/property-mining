@@ -61,6 +61,7 @@ def rollout(specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_
         value_list = []
         reward_list = []
         const = 0
+        previous_reward_same = 0
         env = RLEnv(specsample)
         decoder.reset()
         if cmd_args.use_rudder == 1:
@@ -72,13 +73,26 @@ def rollout(specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_
             # reward = eval_result(env.specsample, env.generated_tree) if env.is_finished() else 0.0
             if having_const== True:
                 const = const + 1
-            reward = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg)
+            reward,reward_width = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const,previous_reward_same) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg, data_smt.formula_dict[env.specsample.filename.replace('.sl', '')])
+
+                    
             # if(env.generated_tree.to_py()=="x==x"):
             #     print(" ")
             nll_list.append(nll)
             value_list.append(vs)
-            reward_list.append(reward)
-
+            if(reward_width!=0):
+                reward_list.append(reward_width+reward)
+                break
+            else:
+                if(not env.is_finished()):
+                    if(previous_reward_same == reward):
+                        reward_list.append(0)
+                    else:
+                        assert reward<previous_reward_same
+                        reward_list.append(reward-previous_reward_same)
+                        previous_reward_same = reward
+                else:
+                    reward_list.append(reward)
             env.t += 1
 
         true_return = np.sum(reward_list)

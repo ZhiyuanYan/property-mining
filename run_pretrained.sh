@@ -1,0 +1,12 @@
+python3 run.py -data_root pretraining_from_smt \
+               -num_epochs 350 \
+               -eps 0.85 \
+               -rl_batchsize 1 \
+               -data_path /data/zhiyuany/property_mining/data/data_all.txt \
+               -seed 1\
+               -exit_on_find 0 \
+               -solution_path mining_collection\
+               -tune_test 0\
+               -use_cuda \
+               -reward_result_path reward_epoch.txt\
+               -use_smt_switch

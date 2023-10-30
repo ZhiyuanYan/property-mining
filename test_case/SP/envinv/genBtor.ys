@@ -1,0 +1,12 @@
+read_verilog -sv ../verilog/simple_pipe.v
+prep -top pipeline_v
+
+hierarchy -check
+proc
+chformal -assume -early;
+
+memory;
+flatten
+setundef -undriven -expose;
+sim -clock clk -reset rst -rstlen 1 -n 1 -w pipeline_v
+write_btor -s design.btor

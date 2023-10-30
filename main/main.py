@@ -18,44 +18,50 @@ from spec_encoder.embedding import LSTMEmbed, EmbedMeanField
 from rudder.rudder import RewardRedistributionLSTM
 import generator.decoder as decoder_rec
 import common.constants as constants
-from data_extract.parser import data
-
+from data_from_smt.parser import data_from_smt
+from data_from_verilog.parser import data_from_verilog
 def main():
     random.seed(cmd_args.seed)
     np.random.seed(cmd_args.seed)
     torch.manual_seed(cmd_args.seed)
     tic()
     device = torch.device("cuda:0" if cmd_args.use_cuda else "cpu")
-        
+    os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:1000'    
     # use batchsize=1 for simplicity
     assert cmd_args.rl_batchsize == 1
 
     # is training meta-learner?
-    is_meta_learner = False
-    if cmd_args.single_sample is None:
-        assert cmd_args.exit_on_find == 0
-        assert cmd_args.tune_test == 0
-        is_meta_learner = True
+    is_meta_learner = True
+    # if cmd_args.single_sample is None:
+    #     # assert cmd_args.exit_on_find == 0
+    #     assert cmd_args.tune_test == 0
+    #     is_meta_learner = True
 
-        tqdm.write('learning meta learner')
-    else:
+    #     tqdm.write('learning meta learner')
+    # else:
         # if using pre-train for single_sample
-        if cmd_args.tune_test == 1:
-            assert os.path.isfile(cmd_args.data_root + '/mem_encoder')
-            assert os.path.isfile(cmd_args.data_root + '/decoder')
+    if cmd_args.tune_test == 1:
+        assert os.path.isfile(cmd_args.tune_test_encoder)
+        assert os.path.isfile(cmd_args.tune_test_decoder)
 
-            tqdm.write('solve single sample with pre-trained model')
+        tqdm.write('solve single sample with pre-trained model')
 
-        else:
-            tqdm.write('solve single sample from scratch')
-
-    data_smt = data()
-    data_smt.load_smt_switch(cmd_args.data_path)
-    data_smt.dump_to_template(cmd_args.data_path)
-    data_smt.S2Vgraph(device)
+    else:
+        tqdm.write('solve single sample from scratch')
+    if(cmd_args.use_smt_switch):
+        data_smt = data_from_smt()
+        data_smt.load_smt_switch(cmd_args.data_path)
+        template_path = data_smt.dump_to_template(cmd_args.data_path)
+        data_smt.S2Vgraph(device)
+    else:
+        data_smt = data_from_verilog()
+        data_smt.load_verilog(cmd_args.data_path)
+        template_path = data_smt.dump_to_template(cmd_args.data_path)
+        data_smt.S2Vgraph(device)
     
+        
     
-    dataset = Dataset()
+    dataset = Dataset(template_path)
     numOf_node_type = constants.NUM_OF_TYPE
 
     # define rudder
@@ -73,8 +79,8 @@ def main():
 
     decoder = decoder.to(device)
     if cmd_args.tune_test == 1:
-        mem_encoder.load_state_dict(torch.load(cmd_args.data_root + '/mem_encoder_50'))
-        decoder.load_state_dict(torch.load(cmd_args.data_root + '/decoder_50'))
+        mem_encoder.load_state_dict(torch.load(cmd_args.tune_test_encoder))
+        decoder.load_state_dict(torch.load(cmd_args.tune_test_decoder))
         if cmd_args.use_rudder == 1:
             rudder.load_state_dict(torch.load(cmd_args.data_root + '/rudder'))
 
@@ -97,7 +103,8 @@ def main():
 
             specsample_ls = dataset.sample_minibatch(cmd_args.rl_batchsize, replacement=True)
             idx = specsample_ls[0].filename.replace(".sl", "")
-            label = data_smt.formula_dict_label[idx]
+            
+                
             mem_batch = mem_encoder(specsample_ls[0],data_smt.formula_dict_tensor[idx])
 
             batch_total_loss = 0.0
@@ -120,6 +127,7 @@ def main():
                                                                                       num_episode=cmd_args.num_episode,
                                                                                       use_random=True, eps=eps)
                 else:
+                    label = data_smt.formula_dict_label[idx]
                     total_loss = supervised_learning(specsample, mem_batch, decoder, device , label ,eps)
                 eps *= cmd_args.eps_decay
 
@@ -163,6 +171,9 @@ def main():
         # epoch, epoch_acc_reward / 100.0, eval_result(specsample_ls[0], generated_tree)))
         print('epoch: %d, average reward: %.4f' % (
         epoch, epoch_acc_reward / 100.0))
+        with open(os.path.join(cmd_args.data_root,cmd_args.reward_result_path), 'a+') as f:
+            f.write('epoch: %d, average reward: %.4f\n'% (
+                epoch, epoch_acc_reward / 100.0))
         # print('epoch: %d, average reward: %.4f, Random: %s, result_r: %.4f' % (
         # epoch, acc_reward / 100.0, generated_tree, eval_result(specsample_ls[0], generated_tree)))
         # print("best_reward:", best_reward, ", best_root:", best_root)
