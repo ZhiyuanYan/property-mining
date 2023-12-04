@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from reward.utils import is_terminal
 import re
+from common.cmd_args import cmd_args
 class SyExp(object):
     def __init__(self, app, args):
         if app == '=':
@@ -52,17 +53,24 @@ class SyExp(object):
     
     def parse_var(self, input_string, rtl_prefix):
         # 使用正则表达式匹配出所需的部分
-        match = re.match(rf'(\w+\[(\d+):(\d+)\])', input_string)
-        assert match
         
-        if match:
-            full_match = match.group(1).split('[')[0]
-            start_bit = int(match.group(2))
-            end_bit = int(match.group(3))
-
-            result = f'((_ extract {start_bit} {end_bit}) {rtl_prefix}{full_match})'
-
+        if(cmd_args.use_smt_switch):
+            result = rtl_prefix + input_string
             return result
+        else:
+            # match = re.match(rf'(\w+\[(\d+):(\d+)\])', input_string)
+            match = re.search(r'(.*?)(?:\[(\d+):(\d+)\])$', input_string)
+            # match = re.search(r'(.*?)(?:\[\d+:\d+\])$', input_string)
+            assert match
+            if match:
+                full_match = match.group(1)
+                full_match = "|" + rtl_prefix + full_match +"|"
+                start_bit = int(match.group(2))
+                end_bit = int(match.group(3))
+
+                result = f'((_ extract {start_bit} {end_bit}) {full_match})'
+
+                return result
     
     def to_str2(self):
         if self.app == 'and':
@@ -100,9 +108,21 @@ class SyExp(object):
         elif self.app == 'eq':
             assert len(self.args) == 2
             return "(" + " == ".join( [a.to_py(var_value) for a in self.args] ) + ")"
+        elif self.app == 'lt':
+            assert len(self.args) == 2
+            return "(" + " < ".join( [a.to_py(var_value) for a in self.args] ) + ")"
+        elif self.app == 'bvule':
+            assert len(self.args) == 2
+            return "(" + " <= ".join( [a.to_py(var_value) for a in self.args] ) + ")"
+        elif self.app == 'bvuge':
+            assert len(self.args) == 2
+            return "(" + " >= ".join( [a.to_py(var_value) for a in self.args] ) + ")"
         elif self.app == 'uneq':
             assert len(self.args) == 2
             return "(" + " != ".join( [a.to_py(var_value) for a in self.args] ) + ")"
+        elif self.app == 'imply':
+            assert len(self.args) == 2
+            return "(" + " -> ".join( [a.to_py(var_value) for a in self.args] ) + ")"
         # elif self.app == 'not':
         #     assert len(self.args) == 1
         #     return "(not (%s) )" % self.args[0].to_py()
@@ -134,6 +154,15 @@ class SyExp(object):
         elif self.app == 'eq':
             assert len(self.args) == 2
             return "(" + "=" + " " + self.args[0].to_smt_lib2_formula(var_value,prefix) + " " + self.args[1].to_smt_lib2_formula(var_value,prefix) + ")"
+        elif self.app == 'bvule':
+            assert len(self.args) == 2
+            return "(" + "bvule" + " " + self.args[0].to_smt_lib2_formula(var_value,prefix) + " " + self.args[1].to_smt_lib2_formula(var_value,prefix) + ")"
+        elif self.app == 'bvuge':
+            assert len(self.args) == 2
+            return "(" + "bvuge" + " " + self.args[0].to_smt_lib2_formula(var_value,prefix) + " " + self.args[1].to_smt_lib2_formula(var_value,prefix) + ")"
+        elif self.app == 'imply':
+            assert len(self.args) == 2
+            return "(" + "=>" + " " + self.args[0].to_smt_lib2_formula(var_value,prefix) + " " + self.args[1].to_smt_lib2_formula(var_value,prefix) + ")"
         elif self.app == 'uneq':
             assert len(self.args) == 2
             return "(" + "bvnot" + " " + "(" + "=" + " " + self.args[0].to_smt_lib2_formula(var_value,prefix) + " " + self.args[1].to_smt_lib2_formula(var_value,prefix) + ")" + ")"
@@ -164,10 +193,13 @@ class SyExp(object):
                 continue
             elif(var.isdigit()):
                 continue
-            match = re.match(r'(\w+)(?:\[\d+:\d+\])', var)
-            assert match
-            variable_name = match.group(1)
-            smt2 = smt2 + '(' + prefix + variable_name + ' ' + '(_ BitVec ' + str(len(var_value[var][0])) + ')' + ') '
+            if(cmd_args.use_smt_switch):
+                smt2 = smt2 + '(' + prefix + var + ' ' + '(_ BitVec ' + str(len(var_value[var][0])) + ')' + ') '
+            else:
+                match = re.search(r'(.*?)(?:\[\d+:\d+\])$', var)
+                assert match
+                variable_name = match.group(1)
+                smt2 = smt2 + '(' + "|" + prefix + variable_name + "|" + ' ' + '(_ BitVec ' + str(len(var_value[var][0])) + ')' + ') '
         smt2 = smt2 + ') '+ 'Bool ' + formula + ')'
         return smt2
 

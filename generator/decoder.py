@@ -34,7 +34,7 @@ class RecursiveDecoder(nn.Module):
         # define state value predictor
         self.value_pred_w1 = nn.Linear(self.latent_dim, self.latent_dim)
         self.value_pred_w2 = nn.Linear(self.latent_dim, 1)
-        self.value_net = lambda s: self.value_pred_w2(F.relu(self.value_pred_w1(s)))
+        # self.value_net = lambda s: self.value_pred_w2(F.relu(self.value_pred_w1(s)))
 
         # params used to get the first attention
         self.first_att = nn.Linear(self.latent_dim, 1)
@@ -44,6 +44,9 @@ class RecursiveDecoder(nn.Module):
         self.state = None
 
         weights_init(self)
+
+    def value_net(self, s):
+        return self.value_pred_w2(F.relu(self.value_pred_w1(s)))
 
     def gen_attention(self, mem, env):
         if env.t == 0:

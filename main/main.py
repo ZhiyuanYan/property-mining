@@ -20,6 +20,7 @@ import generator.decoder as decoder_rec
 import common.constants as constants
 from data_from_smt.parser import data_from_smt
 from data_from_verilog.parser import data_from_verilog
+import time
 def main():
     random.seed(cmd_args.seed)
     np.random.seed(cmd_args.seed)
@@ -71,27 +72,37 @@ def main():
 
     # define mem_encoder, decoder and opt
     # mem_encoder = LSTMEmbed(cmd_args.embedding_size, numOf_node_type)
-    mem_encoder = EmbedMeanField(cmd_args.embedding_size, len(dataset.node_type_dict), device,max_lv=cmd_args.s2v_level)
-    mem_encoder = mem_encoder.to(device)
-    
-    decoder_class = getattr(decoder_rec, cmd_args.decoder_model)
-    decoder = decoder_class(cmd_args.embedding_size*2, rudder)
 
-    decoder = decoder.to(device)
+
+    
     if cmd_args.tune_test == 1:
-        mem_encoder.load_state_dict(torch.load(cmd_args.tune_test_encoder))
-        decoder.load_state_dict(torch.load(cmd_args.tune_test_decoder))
+        checkpoint = torch.load(cmd_args.tune_test_encoder)
+        mem_encoder = checkpoint["net"]
+        decoder = torch.load(cmd_args.tune_test_decoder)
+        mem_encoder = mem_encoder.to(device)
+        decoder = decoder.to(device)
         if cmd_args.use_rudder == 1:
             rudder.load_state_dict(torch.load(cmd_args.data_root + '/rudder'))
-
+    else:
+        mem_encoder = EmbedMeanField(cmd_args.embedding_size, len(dataset.node_type_dict), device,max_lv=cmd_args.s2v_level)
+        mem_encoder = mem_encoder.to(device)
+        
+        decoder_class = getattr(decoder_rec, cmd_args.decoder_model)
+        decoder = decoder_class(cmd_args.embedding_size*2, rudder)
+        decoder = decoder.to(device)
     params = [mem_encoder.parameters(), decoder.parameters()]
     if cmd_args.use_rudder == 1:
         params.append(rudder.parameters())
-
-    optimizer = optim.Adam(chain.from_iterable(params), lr=cmd_args.learning_rate)
-
-    eps = cmd_args.eps
-    for epoch in range(cmd_args.num_epochs):
+    
+    start_epoch = 0
+    if cmd_args.tune_test == 1:
+        optimizer = checkpoint["optimizer"]
+        eps = cmd_args.eps*(cmd_args.eps_decay ** checkpoint["epoch"])
+        start_epoch =checkpoint["epoch"]
+    else:
+        eps = cmd_args.eps
+        optimizer = optim.Adam(chain.from_iterable(params), lr=cmd_args.learning_rate)
+    for epoch in range(start_epoch, cmd_args.num_epochs):
 
         epoch_best_reward = -5.0
         epoch_best_root = None
@@ -104,9 +115,10 @@ def main():
             specsample_ls = dataset.sample_minibatch(cmd_args.rl_batchsize, replacement=True)
             idx = specsample_ls[0].filename.replace(".sl", "")
             
-                
+            # start = time.time()    
             mem_batch = mem_encoder(specsample_ls[0],data_smt.formula_dict_tensor[idx])
-
+            # end = time.time() 
+            # print(end-start) 
             batch_total_loss = 0.0
             batch_rudder_loss = 0.0
             acc_reward = 0.0
@@ -121,11 +133,15 @@ def main():
                 # mem = mem_batch[embedding_offset: embedding_offset + specsample.spectree.numOf_nodes, :]
                 # embedding_offset += specsample.spectree.numOf_nodes
                 if cmd_args.use_supervise == False:
+                    # start = time.time()
                     total_loss, rudder_loss, best_reward, best_tree, acc_reward = rollout(specsample, data_smt, mem_batch, decoder,
                                                                                       rudder,
                                                                                       (epoch_acc_reward / (k + 1)),device,
                                                                                       num_episode=cmd_args.num_episode,
                                                                                       use_random=True, eps=eps)
+                    # end = time.time()
+
+                    # print(end-start)  
                 else:
                     label = data_smt.formula_dict_label[idx]
                     total_loss = supervised_learning(specsample, mem_batch, decoder, device , label ,eps)
@@ -143,7 +159,10 @@ def main():
             if cmd_args.use_rudder == 1:
                 batch_rudder_loss /= cmd_args.rl_batchsize
                 loss += batch_rudder_loss
+            # start = time.time()
             loss.backward()
+            # end = time.time()
+            # print(end-start)
             loss_total+=loss
             avg_loss = loss_total/(k+1)
             optimizer.step()
@@ -152,11 +171,12 @@ def main():
 
         if is_meta_learner:
             if epoch % 5 == 0:
-                torch.save(mem_encoder.state_dict(), cmd_args.data_root + '/mem_encoder_' + str(epoch))
-                torch.save(decoder.state_dict(), cmd_args.data_root + '/decoder_' + str(epoch))
-
-            torch.save(mem_encoder.state_dict(), cmd_args.data_root + '/mem_encoder')
-            torch.save(decoder.state_dict(), cmd_args.data_root + '/decoder')
+                state_dict_encoder = {"net": mem_encoder, "optimizer": optimizer, "epoch": epoch}
+                torch.save(state_dict_encoder, cmd_args.data_root + '/mem_encoder_' + str(epoch)+'.pth')
+                torch.save(decoder, cmd_args.data_root + '/decoder_' + str(epoch)+'.pth')
+            state_dict_encoder = {"net": mem_encoder, "optimizer": optimizer, "epoch": epoch}
+            torch.save(state_dict_encoder, cmd_args.data_root + '/mem_encoder.pth')
+            torch.save(decoder, cmd_args.data_root + '/decoder.pth')
             if cmd_args.use_rudder == 1:
                 torch.save(rudder.state_dict(), cmd_args.data_root + '/rudder')
 
@@ -174,6 +194,9 @@ def main():
         with open(os.path.join(cmd_args.data_root,cmd_args.reward_result_path), 'a+') as f:
             f.write('epoch: %d, average reward: %.4f\n'% (
                 epoch, epoch_acc_reward / 100.0))
+        path = os.path.join(cmd_args.data_root,"mining_result")
+        with open(path, 'a+') as f:
+            f.write("Here is the end of the epoches: %d"%(epoch))
         # print('epoch: %d, average reward: %.4f, Random: %s, result_r: %.4f' % (
         # epoch, acc_reward / 100.0, generated_tree, eval_result(specsample_ls[0], generated_tree)))
         # print("best_reward:", best_reward, ", best_root:", best_root)

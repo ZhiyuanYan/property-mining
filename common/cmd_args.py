@@ -58,6 +58,8 @@ cmd_opt.add_argument('-use_smt_switch', action="store_true",
                         help="Whether use the date generate from smt switvh to train and evaluate")
 cmd_opt.add_argument('-iteration', default=0, type=int,
                         help="The number of iteration of the CEGAR loop")
+
+cmd_opt.add_argument('-const_threshold', default=0.01, type=float, help='The threshold that the const need to keep during mining')
 # cmd_opt.add_argument('-smtlib2_path', default=None, help='path of smtlib2')
 
 cmd_args, _ = cmd_opt.parse_known_args()

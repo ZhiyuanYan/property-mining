@@ -8,33 +8,53 @@ VAR_TYPE = 4
 
 NUM_OF_TYPE = 5
 
-# OP_NAMES = ['eq', 'uneq', 'bvand', 'bvsub','bvor','bvadd','bvxor']
-# OP_NAME2IND = {'eq':0, 'uneq':1, 'bvand':2, 'bvsub':3,'bvor':4,'bvadd':5,'bvxor':6}
-OP_NAMES = ['eq', 'uneq', 'bvand', 'bvsub','bvor']
-OP_NAME2IND = {'eq':0, 'uneq':1, 'bvand':2, 'bvsub':3,'bvor':4}
+# OP_NAMES = ['eq', 'bvule', 'bvuge','bvand', 'bvsub','bvor','bvadd','bvxor']
+OP_NAMES = ['eq', 'bvule', 'bvand', 'bvsub','bvor','bvadd']
+# OP_NAME2IND = {'eq':0, 'bvule':1, 'bvuge':2,'bvand':3, 'bvsub':4,'bvor':5,'bvadd':6,'bvxor':7}
+OP_NAME2IND = {'eq':0, 'bvule':1, 'bvand':2, 'bvsub':3,'bvor':4,'bvadd':5}
+# OP_NAMES = ['eq', 'uneq', 'bvand', 'bvsub','bvor']
+# OP_NAME2IND = {'eq':0, 'uneq':1, 'bvand':2, 'bvsub':3,'bvor':4}
 TYPES_IN_SPEC = [OR_TYPE, AND_TYPE, XOR_TYPE, NOT_TYPE, VAR_TYPE]
 
 # Types for grammar graph
+# EQ_DERIVE_TYPE = 0
+# # UNEQ_DERIVE_TYPE = 2
+# LEQ_DERIVE_TYPE = 2
+# GEQ_DERIVE_TYPE = 4
+# BVAND_DERIVE_TYPE = 6
+# BVSUB_DERIVE_TYPE = 8
+# BVOR_DERIVE_TYPE = 10
+# BVADD_DERIVE_TYPE = 12
+# BVXOR_DERIVE_TYPE = 14
+# # OP_NAME2TYPE= {"eq":EQ_DERIVE_TYPE, "uneq":LT_DERIVE_TYPE, "bvand":BVAND_DERIVE_TYPE, 
+# #                 "bvsub":BVSUB_DERIVE_TYPE,"bvor":BVOR_DERIVE_TYPE,"bvadd":BVADD_DERIVE_TYPE,"bvxor":BVXOR_DERIVE_TYPE}
+# OP_NAME2TYPE= {"eq":EQ_DERIVE_TYPE, "bvule":LEQ_DERIVE_TYPE,"bvuge":GEQ_DERIVE_TYPE, "bvand":BVAND_DERIVE_TYPE, 
+#                 "bvsub":BVSUB_DERIVE_TYPE,"bvor":BVOR_DERIVE_TYPE,"bvadd":BVADD_DERIVE_TYPE,"bvxor":BVXOR_DERIVE_TYPE}
+# # OP_NAME2TYPE= {"eq":EQ_DERIVE_TYPE, "uneq":UNEQ_DERIVE_TYPE, "bvand":BVAND_DERIVE_TYPE, 
+# #                 "bvsub":BVSUB_DERIVE_TYPE,"bvor":BVOR_DERIVE_TYPE}
+# T_DERIVE_TYPE = 16
+# NT_DERIVE_TYPE = 18
+
+# Types for grammar graph
 EQ_DERIVE_TYPE = 0
-UNEQ_DERIVE_TYPE = 2
+# UNEQ_DERIVE_TYPE = 2
+LEQ_DERIVE_TYPE = 2
 BVAND_DERIVE_TYPE = 4
 BVSUB_DERIVE_TYPE = 6
 BVOR_DERIVE_TYPE = 8
-# BVADD_DERIVE_TYPE = 10
+BVADD_DERIVE_TYPE = 10
 # BVXOR_DERIVE_TYPE = 12
-# OP_NAME2TYPE= {"eq":EQ_DERIVE_TYPE, "uneq":UNEQ_DERIVE_TYPE, "bvand":BVAND_DERIVE_TYPE, 
+# OP_NAME2TYPE= {"eq":EQ_DERIVE_TYPE, "uneq":LT_DERIVE_TYPE, "bvand":BVAND_DERIVE_TYPE, 
 #                 "bvsub":BVSUB_DERIVE_TYPE,"bvor":BVOR_DERIVE_TYPE,"bvadd":BVADD_DERIVE_TYPE,"bvxor":BVXOR_DERIVE_TYPE}
-OP_NAME2TYPE= {"eq":EQ_DERIVE_TYPE, "uneq":UNEQ_DERIVE_TYPE, "bvand":BVAND_DERIVE_TYPE, 
-                "bvsub":BVSUB_DERIVE_TYPE,"bvor":BVOR_DERIVE_TYPE}
-# T_DERIVE_TYPE = 12
-# NT_DERIVE_TYPE = 14
-T_DERIVE_TYPE = 10
-NT_DERIVE_TYPE = 12
-
-
+OP_NAME2TYPE= {"eq":EQ_DERIVE_TYPE, "bvule":LEQ_DERIVE_TYPE, "bvand":BVAND_DERIVE_TYPE, 
+                "bvsub":BVSUB_DERIVE_TYPE,"bvor":BVOR_DERIVE_TYPE,"bvadd":BVADD_DERIVE_TYPE}
+# OP_NAME2TYPE= {"eq":EQ_DERIVE_TYPE, "uneq":UNEQ_DERIVE_TYPE, "bvand":BVAND_DERIVE_TYPE, 
+#                 "bvsub":BVSUB_DERIVE_TYPE,"bvor":BVOR_DERIVE_TYPE}
+T_DERIVE_TYPE = 12
+NT_DERIVE_TYPE = 14
 # SPEC_COVER_TYPE = 20 # used for spec embedding
 
-NUM_GRAMMAR_EDGE_TYPES = 14 # 10 edge types x 2 directions
+NUM_GRAMMAR_EDGE_TYPES = 16 # 10 edge types x 2 directions
 
 TYPE2NAME = {
     # OR_DERIVE_TYPE : "OR_DERIVE_TYPE(F)",
@@ -60,16 +80,18 @@ TYPE2NAME = {
 
     EQ_DERIVE_TYPE : "EQ_DERIVE(F)",
     EQ_DERIVE_TYPE+1 : "EQ_DERIVE(B)",
-    UNEQ_DERIVE_TYPE : "UNEQ_DERIVE(F)",
-    UNEQ_DERIVE_TYPE+1 : "UNEQ_DERIVE(B)",
+    LEQ_DERIVE_TYPE : "LT_DERIVE(F)",
+    LEQ_DERIVE_TYPE+1 : "LT_DERIVE(B)",
+    # GEQ_DERIVE_TYPE : "GT_DERIVE(F)",
+    # GEQ_DERIVE_TYPE+1 : "GT_DERIVE(B)",
     BVAND_DERIVE_TYPE : "BVAND_DERIVE(F)",
     BVAND_DERIVE_TYPE+1 : "BVAND_DERIVE(B)",
     BVSUB_DERIVE_TYPE : "BVSUB_DERIVE(F)",
     BVSUB_DERIVE_TYPE+1 : "BVSUB_DERIVE(B)",
     BVOR_DERIVE_TYPE : "BVOR_DERIVE(F)",
     BVOR_DERIVE_TYPE+1 : "BVOR_DERIVE(B)",
-    # BVADD_DERIVE_TYPE : "BVADD_DERIVE(F)",
-    # BVADD_DERIVE_TYPE+1 : "BVADD_DERIVE(B)",
+    BVADD_DERIVE_TYPE : "BVADD_DERIVE(F)",
+    BVADD_DERIVE_TYPE+1 : "BVADD_DERIVE(B)",
     # BVXOR_DERIVE_TYPE : "BVXOR_DERIVE(F)",
     # BVXOR_DERIVE_TYPE+1 : "BVXOR_DERIVE(B)",
     T_DERIVE_TYPE : "T_DERIVE(F)",

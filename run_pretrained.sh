@@ -1,9 +1,10 @@
 python3 run.py -data_root pretraining_from_smt \
-               -num_epochs 350 \
+               -num_epochs 280 \
                -eps 0.85 \
                -rl_batchsize 1 \
-               -data_path /data/zhiyuany/property_mining/data/data_all.txt \
+               -data_path /data/zhiyuany/property_mining/data/data_collection_new_3.txt \
                -seed 1\
+               -learning_rate 0.001\
                -exit_on_find 0 \
                -solution_path mining_collection\
                -tune_test 0\

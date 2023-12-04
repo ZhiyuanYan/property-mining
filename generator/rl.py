@@ -73,15 +73,17 @@ def rollout(specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_
             # reward = eval_result(env.specsample, env.generated_tree) if env.is_finished() else 0.0
             if having_const== True:
                 const = const + 1
-            reward,reward_width = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const,previous_reward_same) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg, data_smt.formula_dict[env.specsample.filename.replace('.sl', '')])
-
+            if env.specsample.filename.replace('.sl', '') in data_smt.cand_masking:
+                reward,reward_exit = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg, data_smt.formula_dict[env.specsample.filename.replace('.sl', '')],data_smt.cand_masking[env.specsample.filename.replace('.sl', '')])
+            else:
+                reward,reward_exit = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg, data_smt.formula_dict[env.specsample.filename.replace('.sl', '')],{})
                     
             # if(env.generated_tree.to_py()=="x==x"):
             #     print(" ")
             nll_list.append(nll)
             value_list.append(vs)
-            if(reward_width!=0):
-                reward_list.append(reward_width+reward)
+            if(reward_exit!=0):
+                reward_list.append(reward_exit+reward)
                 break
             else:
                 if(not env.is_finished()):
@@ -89,7 +91,7 @@ def rollout(specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_
                         reward_list.append(0)
                     else:
                         assert reward<previous_reward_same
-                        reward_list.append(reward-previous_reward_same)
+                        reward_list.append(reward)
                         previous_reward_same = reward
                 else:
                     reward_list.append(reward)
