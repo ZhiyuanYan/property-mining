@@ -26,7 +26,7 @@ def main():
     np.random.seed(cmd_args.seed)
     torch.manual_seed(cmd_args.seed)
     tic()
-    device = torch.device("cuda:0" if cmd_args.use_cuda else "cpu")
+    device = torch.device("cuda:1" if cmd_args.use_cuda else "cpu")
     os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:1000'    
     # use batchsize=1 for simplicity
     assert cmd_args.rl_batchsize == 1
@@ -170,7 +170,7 @@ def main():
 
 
         if is_meta_learner:
-            if epoch % 5 == 0:
+            if epoch % 100 == 0:
                 state_dict_encoder = {"net": mem_encoder, "optimizer": optimizer, "epoch": epoch}
                 torch.save(state_dict_encoder, cmd_args.data_root + '/mem_encoder_' + str(epoch)+'.pth')
                 torch.save(decoder, cmd_args.data_root + '/decoder_' + str(epoch)+'.pth')

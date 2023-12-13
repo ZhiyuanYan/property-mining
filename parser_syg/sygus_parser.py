@@ -133,6 +133,54 @@ class SyExp(object):
             assert len(self.args) == 0
             return self.app
 
+    def to_verilog(self,var_value={}):
+        ''' Convert the expression to python format
+        '''
+        if self.app == 'bvand':
+            assert len(self.args) == 2
+            return "(" + " & ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'bvxor':
+            assert len(self.args) == 2
+            return "(" + " ^ ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'bvor':
+            assert len(self.args) == 2
+            return "(" + " | ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'bvsub':
+            assert len(self.args) == 2
+            return "(" + " - ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'bvadd':
+            assert len(self.args) == 2
+            return "(" + " + ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'eq':
+            assert len(self.args) == 2
+            return "(" + " == ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'lt':
+            assert len(self.args) == 2
+            return "(" + " < ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'bvule':
+            assert len(self.args) == 2
+            return "(" + " <= ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'bvuge':
+            assert len(self.args) == 2
+            return "(" + " >= ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'uneq':
+            assert len(self.args) == 2
+            return "(" + " != ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        elif self.app == 'imply':
+            assert len(self.args) == 2
+            return "(" + " -> ".join( [a.to_verilog(var_value) for a in self.args] ) + ")"
+        # elif self.app == 'not':
+        #     assert len(self.args) == 1
+        #     return "(not (%s) )" % self.args[0].to_py()
+        elif 'const' in self.app:
+            assert len(self.args) == 0
+            return str(len(var_value[self.app][0])) + '\'b' + var_value[self.app][0]
+        elif self.app.isdigit():
+            return str(len(self.app)) + '\'b' + self.app
+        else:
+            assert len(self.args) == 0
+            return self.app
+
     def to_smt_lib2_formula(self, var_value = {},prefix='RTL.'):
         ''' Convert the expression to smtlib2 format
         '''

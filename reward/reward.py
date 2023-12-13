@@ -1410,32 +1410,35 @@ def reward_cal(data_smt, filename, pg , generated_tree, const):
                                    #      mining_collection[generated_tree.to_py(data_temperal)] = mining_collection[generated_tree.to_py(data_temperal)] +1
                                    
                                    shutil.rmtree(os.path.join(cmd_args.data_root,'assertion'))
+                                   if(os.path.exists(os.path.join(cmd_args.data_root,'verilog_assertion'))):
+                                        shutil.rmtree(os.path.join(cmd_args.data_root,'verilog_assertion'))
                                    for formula,formula_info in mining_collection.items():
                                         smtlib2 = formula_info[0].to_smt_lib2(formula_info[1], data_temperal,"")
                                         write_to_smt(smtlib2)
+                                        write_to_verilog(formula_info[0])
                                    if(len(mining_collection)==5):
                                         sys.exit()
-                                   if cmd_args.exit_on_find:
-                                        ##Now we need to check whether this assignment can block the counterexample
-                                        cex_copy = data_smt.cex.copy()
-                                        for key, value in res.items():
-                                             if(key == "result"):
-                                                  continue
-                                             else:
-                                                  random_key_2 = random.choice(list(value.keys()))
-                                                  cex_copy[key] = value[random_key_2]
-                                        print("Start to check whether the assertion can block the cex")
-                                        result = inner_fault_coverage(cex_copy, pg, generated_tree)
-                                        if(result[0]=='1'):
-                                             print("The counterexample cannot be blocked, now let\'s try to connect with previous assertion")
-                                             concat_previous_aassertion(cex_copy,pg,generated_tree, data_temperal,None)
-                                        else:
-                                             smtlib2 = generated_tree.to_smt_lib2(var_all, data_temperal, "RTL.")
-                                             path_result = os.path.join(cmd_args.data_root,"result.txt")
-                                             with open(path_result, 'w') as f:
-                                                  f.write("find_assumption")
-                                             write_assumption(smtlib2)
-                                             sys.exit()
+                                   # if cmd_args.exit_on_find:
+                                   #      ##Now we need to check whether this assignment can block the counterexample
+                                   #      cex_copy = data_smt.cex.copy()
+                                   #      for key, value in res.items():
+                                   #           if(key == "result"):
+                                   #                continue
+                                   #           else:
+                                   #                random_key_2 = random.choice(list(value.keys()))
+                                   #                cex_copy[key] = value[random_key_2]
+                                   #      print("Start to check whether the assertion can block the cex")
+                                   #      result = inner_fault_coverage(cex_copy, pg, generated_tree)
+                                   #      if(result[0]=='1'):
+                                   #           print("The counterexample cannot be blocked, now let\'s try to connect with previous assertion")
+                                   #           concat_previous_aassertion(cex_copy,pg,generated_tree, data_temperal,None)
+                                   #      else:
+                                   #           smtlib2 = generated_tree.to_smt_lib2(var_all, data_temperal, "RTL.")
+                                   #           path_result = os.path.join(cmd_args.data_root,"result.txt")
+                                   #           with open(path_result, 'w') as f:
+                                   #                f.write("find_assumption")
+                                   #           write_assumption(smtlib2)
+                                   #           sys.exit()
                                          
           else:
                reward_total = reward_single + reward_total
@@ -1630,6 +1633,21 @@ def write_to_smt(smt2):
           with open(assertion_path, 'w') as f:
                f.write(smt2)
 
+
+def write_to_verilog(generated_tree,var_value = {}):
+
+     verilog_path_folder = os.path.join(cmd_args.data_root,'verilog_assertion')
+     if(os.path.exists(verilog_path_folder)==False):
+          os.makedirs(verilog_path_folder)
+          assertion_path = os.path.join(verilog_path_folder,'verilog' + '0' + '.txt')
+          with open(assertion_path, 'w') as f:
+               f.write(generated_tree.to_verilog())
+     else:
+          file_count = len([f for f in os.listdir(verilog_path_folder) if os.path.isfile(os.path.join(verilog_path_folder, f))])
+          assertion_path = os.path.join(verilog_path_folder,'verilog' + str(file_count)+ '.txt')
+          with open(assertion_path, 'w') as f:
+               f.write(generated_tree.to_verilog())
+               
 def write_assumption(smt2):
      path = os.path.join(cmd_args.data_root,'envinv.smt2')
      if(os.path.exists(path)):

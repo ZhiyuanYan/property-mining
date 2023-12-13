@@ -1,5 +1,5 @@
 python3 run.py -data_root pretraining_from_smt \
-               -num_epochs 280 \
+               -num_epochs 300 \
                -eps 0.85 \
                -rl_batchsize 1 \
                -data_path /data/zhiyuany/property_mining/data/data_collection_new_3.txt \
