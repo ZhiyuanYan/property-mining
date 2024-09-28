@@ -33,32 +33,34 @@ class data_from_verilog(object):
           pattern = re.compile(r'^x+$')
           
           
-          # We first parse the COI variables we got from cosa2
-          if os.path.exists("COI.txt"):
+          ## We first parse the COI variables we got from cosa2. In the DreamMiner we do not need to care it.
+          # if os.path.exists("COI.txt"):
                
           
-               with open("COI.txt", 'r') as coi_file:
-                    lines_coi = coi_file.readlines()
+          #      with open("COI.txt", 'r') as coi_file:
+          #           lines_coi = coi_file.readlines()
                
-               for line in lines_coi:
-                    line_info = line.strip()
-                    line_split = line_info.split()
+          #      for line in lines_coi:
+          #           line_info = line.strip()
+          #           line_split = line_info.split()
                     
-                    if(line_split[0].startswith('RTL.')==False):
-                         continue
+          #           if(line_split[0].startswith('RTL.')==False):
+          #                continue
                     
-                    var = line_split[0].replace('RTL.','')
-                    for i in range(int(line_split[1])):
-                         left = line_split[(i+1)*2]
-                         right = line_split[(i+1)*2+1]
-                         if i == 0:
-                              self.COI_variable[var] =[var+'['+left+':'+right+']']
-                         else:
-                              self.COI_variable[var].append((var+'['+left+':'+right+']'))
-                         assert line_split[-1].startswith('#b')
-                         value = line_split[-1].replace('#b','')
-                         extracted_val = self.extract_bits(value, int(left), int(right))
-                         self.cex[var+'['+left+':'+right+']'] = extracted_val
+          #           var = line_split[0].replace('RTL.','')
+          #           for i in range(int(line_split[1])):
+          #                left = line_split[(i+1)*2]
+          #                right = line_split[(i+1)*2+1]
+          #                if i == 0:
+          #                     self.COI_variable[var] =[var+'['+left+':'+right+']']
+          #                else:
+          #                     self.COI_variable[var].append((var+'['+left+':'+right+']'))
+          #                assert line_split[-1].startswith('#b')
+          #                value = line_split[-1].replace('#b','')
+          #                extracted_val = self.extract_bits(value, int(left), int(right))
+          #                self.cex[var+'['+left+':'+right+']'] = extracted_val
+          
+          
           with open(fname, 'r') as file:
                lines = file.readlines()
           # current_formula = None
@@ -69,9 +71,10 @@ class data_from_verilog(object):
           # variable_width = self.build_formula_dict(lines,False, fname, pattern)
           
           name, ext = os.path.splitext(fname)
-          ##Now lets generate a fault pattern
+          
           self.static_analysis_add_sub(self.formula_dict[os.path.basename(name)],os.path.basename(name))
           self.static_analysis_mask(os.path.basename(name))
+          ##Now lets generate a fault pattern
           # self.generate_fault_pattern(variable_width,{},0,os.path.basename(name))
 
      def insert_to_coi_variable(self,lines):
@@ -137,6 +140,7 @@ class data_from_verilog(object):
                          # value ='021213223'
                          start = int(match.group(1))
                          end = int(match.group(2))
+                         # Note that this is for the previous prokect, which need to crop the value
                          # First we reverse the value
                          reversed_value = value[::-1]
 
@@ -343,9 +347,13 @@ class data_from_verilog(object):
                     result_add = []
                     result_sub = []
                     for i in range(len(dic_value[key_combination[0]])):
-                         result_add.append(bitwise_addition(dic_value[key_combination[0]][i],dic_value[key_combination[1]][i]))
-                         result_sub.append(bitwise_subtraction(dic_value[key_combination[0]][i],dic_value[key_combination[1]][i]))
-                         result_sub.append(bitwise_subtraction(dic_value[key_combination[1]][i],dic_value[key_combination[0]][i]))
+                         # result_add.append(bitwise_addition(dic_value[key_combination[0]][i],dic_value[key_combination[1]][i]))
+                         candidate_1 = bitwise_subtraction(dic_value[key_combination[0]][i],dic_value[key_combination[1]][i])
+                         candidate_2 = bitwise_subtraction(dic_value[key_combination[1]][i],dic_value[key_combination[0]][i])
+                         result_add.append(candidate_1)
+                         result_add.append(candidate_2)
+                         result_sub.append(candidate_1)
+                         result_sub.append(candidate_2)
                     for i in range(len(result_add)):
                          if result_add[i] in dict_add:
                               dict_add[result_add[i]] = dict_add[result_add[i]] + 1 
@@ -418,7 +426,7 @@ class data_from_verilog(object):
                          self.cand_const_sub[current_formula][key] = value               
                else:
                     self.cand_const_sub[current_formula] = cand_const_sub_single_reduce
-
+          assert self.cand_const_sub == self.cand_const_add
 if __name__ == "__main__":
      path = "/data/zhiyuany/property_mining/SP.txt"
      data_smt = data_from_verilog()

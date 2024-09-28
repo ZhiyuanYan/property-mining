@@ -54,11 +54,23 @@ cmd_opt.add_argument('-use_cuda', action="store_true",
                         help="Use the GPU to run the model")
 cmd_opt.add_argument('-use_supervise', action="store_true",
                         help="Whether use supervised method to train")
+cmd_opt.add_argument('-remove_const_handling', action="store_true",
+                        help="Whether we use the pure random method to get the result.")
+cmd_opt.add_argument('-use_static_analysis', action="store_true",
+                        help="Whether we use the static analysis to get the result.")
+cmd_opt.add_argument('-remove_deduction_engine', action="store_true",
+                        help="Whether we use the deduction engine to get the result.")
+cmd_opt.add_argument('-use_random_action', action="store_true",
+                        help="Whether we use the random action to get the result.")
 cmd_opt.add_argument('-use_smt_switch', action="store_true",
-                        help="Whether use the date generate from smt switvh to train and evaluate")
+                        help="Whether use the date generate from smt switch to train and evaluate")
+cmd_opt.add_argument('-cal_pass_at_k', action="store_true",
+                        help="Whether we calculate the pass@k")
+cmd_opt.add_argument('-run_ablition', action="store_true",
+                        help="Whether we calculate the pass@k")
+cmd_opt.add_argument('-pass_at_k_file', default=None, help='store the pass@k in each iteration')
 cmd_opt.add_argument('-iteration', default=0, type=int,
                         help="The number of iteration of the CEGAR loop")
-
 cmd_opt.add_argument('-const_threshold', default=0.01, type=float, help='The threshold that the const need to keep during mining')
 # cmd_opt.add_argument('-smtlib2_path', default=None, help='path of smtlib2')
 

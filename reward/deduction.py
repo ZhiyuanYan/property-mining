@@ -137,7 +137,7 @@ def deduction_const_connection(generate_tree,pg,dictionary,const_masking):
           if 'const' in generate_tree.args[0].app:
                return -1,0
           elif symbol == 'bvand' or symbol == 'bvxor' or symbol == 'bvor':
-               reward_left, width_left = deduction_const_connection(generate_tree.args[1],pg,dictionary,const_masking)
+               reward_left, width_left = deduction_const_connection(generate_tree.args[0],pg,dictionary,const_masking)
                if(((width_left not in const_masking) and width_left!=-1) or (reward_left==-1)or (len(const_masking)==0)):
                     return -1,0
                else:

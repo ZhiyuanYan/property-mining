@@ -46,7 +46,7 @@ class RLEnv(object):
         return self.pg.spec_embedding
 
 
-def rollout(specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_episode, use_random, eps):
+def rollout(k, specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_episode, use_random, eps):
 
     total_loss = 0.0
     rudder_loss = 0.0
@@ -71,15 +71,32 @@ def rollout(specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_
 
             nll, vs , having_const = decoder(env, mem, use_random, False, device , const,  eps=eps)
             # reward = eval_result(env.specsample, env.generated_tree) if env.is_finished() else 0.0
-            if having_const== True:
-                const = const + 1
-            if env.specsample.filename.replace('.sl', '') in data_smt.cand_masking:
-                reward,reward_exit = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg, data_smt.formula_dict[env.specsample.filename.replace('.sl', '')],data_smt.cand_masking[env.specsample.filename.replace('.sl', '')])
+
+            
+            if(cmd_args.remove_const_handling):
+                if env.is_finished():
+                    reward,reward_exit = reward_const_random(k, data_smt, env.specsample.filename, env.specsample.pg, env.generated_tree) 
+                else: 
+                    reward = 0
+                    reward_exit = 0
+                if having_const== True:
+                    const = const + 1
+            elif cmd_args.remove_deduction_engine:
+                if env.is_finished():
+                    reward,reward_exit = reward_cal(k, data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const)
+                else: 
+                    reward = 0
+                    reward_exit = 0                
+                if having_const== True:
+                    const = const + 1
             else:
-                reward,reward_exit = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg, data_smt.formula_dict[env.specsample.filename.replace('.sl', '')],{})
-                    
-            # if(env.generated_tree.to_py()=="x==x"):
-            #     print(" ")
+                if having_const== True:
+                    const = const + 1
+                if env.specsample.filename.replace('.sl', '') in data_smt.cand_masking:
+                    reward,reward_exit = reward_cal(k,data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg, data_smt.formula_dict[env.specsample.filename.replace('.sl', '')],data_smt.cand_masking[env.specsample.filename.replace('.sl', '')])
+                else:
+                    reward,reward_exit = reward_cal(data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const) if env.is_finished() else deduction(env.generated_tree,env.specsample.pg, data_smt.formula_dict[env.specsample.filename.replace('.sl', '')],{})
+            
             nll_list.append(nll)
             value_list.append(vs)
             if(reward_exit!=0):

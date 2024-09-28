@@ -964,6 +964,669 @@ def recursive_calculation(dic_value, pg, generate_tree, cand_const_add, cand_con
      assert (len(result)!=0)
      return result
 
+def recursive_calculation_random(dic_value, pg, generate_tree, cand_const_add, cand_const_sub,cand_masking):
+
+     symbol = generate_tree.app
+     result = []
+     result_expand = []
+     # extract_flag = False
+     if(is_terminal(pg,symbol)):
+          result_dict = {}
+          result_temp = {}
+          if('const' in symbol):
+               random_key = random.choice(list(dic_value.keys()))
+               for i in range(len(dic_value[random_key])):
+                    result_temp[i] = symbol
+          else:
+               for i in range(len(dic_value[symbol])):
+                    result_temp[i] = dic_value[symbol][i]
+          result_dict["result"] = result_temp
+          return [result_dict]
+
+     if(len(generate_tree.args)==2):
+          result_arg_1 = recursive_calculation_random( dic_value, pg, generate_tree.args[0], cand_const_add, cand_const_sub,cand_masking)
+          result_arg_2 = recursive_calculation_random( dic_value, pg, generate_tree.args[1], cand_const_add, cand_const_sub,cand_masking)
+          # assert len(result_arg_1) == len(result_arg_2) 
+     
+     if(symbol == 'eq'):
+          random_key_1 = random.choice(list(result_arg_1[0]["result"].keys()))
+          random_key_2 = random.choice(list(result_arg_2[0]["result"].keys()))
+          ## Having const
+          # const_candidate = []
+          if('const' in result_arg_1[0]["result"][random_key_1] and 'const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_1) == 1
+               assert len(result_arg_2) == 1
+               temp_dict = {}
+               result_temp = {}  
+               for k in range(len(result_arg_1[0]["result"])):
+                    temp_dict[k] = result_arg_1[0]["result"][k]
+               result_temp["result"] = temp_dict
+               result.append(result_temp) 
+          
+          elif('const' in result_arg_1[0]["result"][random_key_1]):
+               assert len(result_arg_1) == 1
+               for j in range(len(result_arg_2)):
+                    result_expand = []
+                    if (result_arg_2[0]["result"][random_key_2]=='-1'):
+                         width = 1
+                    else:
+                         width = len(result_arg_2[0]["result"][random_key_2])
+                    random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+                    new_result_temp = {}
+                    for i in range(len(result_arg_1[0]["result"])):
+                         new_result_temp[i] = random_binary_string
+                    result_expand.append(new_result_temp)
+                    
+                    for i in range(len(result_expand)):
+                         # for j in range(len(result_arg_2)):
+                              assert len(result_expand[i]) == len(result_arg_2[j]["result"])
+                              temp_dict = {}
+                              result_temp = {}
+                              for k in range(len(result_expand[i])):
+                                   if((len(result_expand[i][k]) != len(result_arg_2[j]["result"][k])) or (result_arg_2[j]["result"][k])=='-1'):
+                                        temp_dict[k] = '-1'
+                                   elif(result_expand[i][k]==result_arg_2[j]["result"][k]):
+                                        temp_dict[k] = '1' 
+                                   else:
+                                        temp_dict[k] = '0'
+                              result_temp["result"] = temp_dict
+                              result_temp[result_arg_1[0]["result"][random_key_1]] = result_expand[i]
+                         
+                              for previous_const, value in result_arg_2[j].items():
+                                   if previous_const == "result":
+                                        continue
+                                   result_temp[previous_const] = value
+                              result.append(result_temp) 
+          
+          elif('const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_2) == 1
+               for j in range(len(result_arg_1)):
+                    # const_candidate = list(set(candidate + const_candidate))
+                    result_expand = []
+                    if(result_arg_1[0]["result"][random_key_1]=='-1'):
+                         width = 1
+                    else:
+                         width = len(result_arg_1[0]["result"][random_key_1])
+                    random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+                    new_result_temp = {}
+                    for i in range(len(result_arg_2[0]["result"])):
+                         new_result_temp[i] = random_binary_string
+                    result_expand.append(new_result_temp)
+                    for i in range(len(result_expand)):
+                         # for j in range(len(result_arg_1)):
+                              assert len(result_expand[i]) == len(result_arg_1[j]["result"])
+                              temp_dict = {}
+                              result_temp = {}
+                              for k in range(len(result_expand[i])):
+                                   if((len(result_expand[i][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_1[j]["result"][k]=='-1')):
+                                        temp_dict[k] = '-1'
+                                   elif(result_expand[i][k]==result_arg_1[j]["result"][k]):
+                                        temp_dict[k] = '1' 
+                                   else:
+                                        temp_dict[k] = '0'
+                              result_temp["result"] = temp_dict
+                              result_temp[result_arg_2[0]["result"][random_key_1]] = result_expand[i]
+                         
+                              for previous_const, value in result_arg_1[j].items():
+                                   if previous_const == "result":
+                                        continue
+                                   result_temp[previous_const] = value
+                              result.append(result_temp)        
+          else:
+               for i in range(len(result_arg_2)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_arg_2[i]["result"]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_arg_2[i]["result"])):
+                              if((len(result_arg_2[i]["result"][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_2[i]["result"][k]=='-1')
+                                 or (result_arg_1[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              elif(result_arg_2[i]["result"][k]==result_arg_1[j]["result"][k]):
+                                   temp_dict[k] = '1' 
+                              else:
+                                   temp_dict[k] = '0'
+                         result_temp["result"] = temp_dict
+                    
+                         for previous_const, value in result_arg_2[i].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+
+     elif(symbol == 'bvule'):
+          random_key_1 = random.choice(list(result_arg_1[0]["result"].keys()))
+          random_key_2 = random.choice(list(result_arg_2[0]["result"].keys()))
+          # const_candidate = []
+          ## Having const
+          if('const' in result_arg_1[0]["result"][random_key_1] and 'const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_1) == 1
+               assert len(result_arg_2) == 1
+               temp_dict = {}
+               result_temp = {}  
+               for k in range(len(result_arg_1[0]["result"])):
+                    temp_dict[k] = result_arg_1[0]["result"][k]
+               result_temp["result"] = temp_dict
+               result.append(result_temp) 
+          
+          elif('const' in result_arg_1[0]["result"][random_key_1]):
+               assert len(result_arg_1) == 1
+               for j in range(len(result_arg_2)):
+                    result_expand = []
+                    if(result_arg_2[0]["result"][random_key_2]=='-1'):
+                         width = 1
+                    else:
+                         width = len(result_arg_2[0]["result"][random_key_2])
+                    random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+                    new_result_temp = {}
+                    for i in range(len(result_arg_1[0]["result"])):
+                         new_result_temp[i] = random_binary_string
+                    result_expand.append(new_result_temp)
+                    
+                    for i in range(len(result_expand)):
+                         # for j in range(len(result_arg_2)):
+                              assert len(result_expand[i]) == len(result_arg_2[j]["result"])
+                              temp_dict = {}
+                              result_temp = {}
+                              for k in range(len(result_expand[i])):
+                                   if((len(result_expand[i][k]) != len(result_arg_2[j]["result"][k])) or (result_arg_2[j]["result"][k]=='-1')):
+                                        temp_dict[k] = '-1'
+                                   elif(result_expand[i][k]<=result_arg_2[j]["result"][k]):
+                                        temp_dict[k] = '1' 
+                                   else:
+                                        temp_dict[k] = '0'
+                              result_temp["result"] = temp_dict
+                              result_temp[result_arg_1[0]["result"][random_key_1]] = result_expand[i]
+                         
+                              for previous_const, value in result_arg_2[j].items():
+                                   if previous_const == "result":
+                                        continue
+                                   result_temp[previous_const] = value
+                              result.append(result_temp) 
+          
+          elif('const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_2) == 1
+               for j in range(len(result_arg_1)):
+                    # const_candidate = list(set(candidate + const_candidate))
+                    result_expand = []
+                    if result_arg_1[0]["result"][random_key_1] == '-1':
+                         width = 1
+                    else:
+                         width = len(result_arg_1[0]["result"][random_key_1])
+                    random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+                    new_result_temp = {}
+                    for i in range(len(result_arg_2[0]["result"])):
+                         new_result_temp[i] = random_binary_string
+                    result_expand.append(new_result_temp)
+                    for i in range(len(result_expand)):
+                         # for j in range(len(result_arg_1)):
+                              assert len(result_expand[i]) == len(result_arg_1[j]["result"])
+                              temp_dict = {}
+                              result_temp = {}
+                              for k in range(len(result_expand[i])):
+                                   if((len(result_expand[i][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_1[j]["result"][k]=='-1')):
+                                        temp_dict[k] = '-1'
+                                   elif(result_expand[i][k]<=result_arg_1[j]["result"][k]):
+                                        temp_dict[k] = '1' 
+                                   else:
+                                        temp_dict[k] = '0'
+                              result_temp["result"] = temp_dict
+                              result_temp[result_arg_2[0]["result"][random_key_1]] = result_expand[i]
+                         
+                              for previous_const, value in result_arg_1[j].items():
+                                   if previous_const == "result":
+                                        continue
+                                   result_temp[previous_const] = value
+                              result.append(result_temp)           
+          else:
+               for i in range(len(result_arg_2)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_arg_2[i]["result"]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+
+                         for k in range(len(result_arg_2[i]["result"])):
+                              if((len(result_arg_2[i]["result"][k])!=len(result_arg_1[j]["result"][k])) or (result_arg_2[i]["result"][k]=='-1')
+                                   or (result_arg_1[j]["result"][k]== '-1')):
+                                   temp_dict[k] = '-1'
+                              elif(int(result_arg_2[i]["result"][k],2)>=int(result_arg_1[j]["result"][k],2)):
+                                   temp_dict[k] = '1' 
+                              else:
+                                   temp_dict[k] = '0'
+                         result_temp["result"] = temp_dict
+                         for previous_const, value in result_arg_2[i].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+
+
+
+     #      # extract_flag = True
+     #      for i in range(len(result_arg)):
+     #                result[i] = result_arg[i]
+                    
+     elif(symbol == 'bvand'):
+          random_key_1 = random.choice(list(result_arg_1[0]["result"].keys()))
+          random_key_2 = random.choice(list(result_arg_2[0]["result"].keys()))
+          ## Having const
+          if('const' in result_arg_1[0]["result"][random_key_1] and 'const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_1) == 1
+               assert len(result_arg_2) == 1
+               temp_dict = {}
+               result_temp = {}  
+               for k in range(len(result_arg_1[0]["result"])):
+                    temp_dict[k] = result_arg_1[0]["result"][k]
+               result_temp["result"] = temp_dict
+               result.append(result_temp) 
+          
+          elif('const' in result_arg_1[0]["result"][random_key_1]):
+               assert len(result_arg_1) == 1
+               if(result_arg_2[0]["result"][random_key_2]=='-1'):
+                    width = 1
+               else:
+                    width = len(result_arg_2[0]["result"][random_key_2])
+               random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+               # candidate = cand_masking[width]
+               # for cand in candidate:
+               new_result_temp = {}
+               for i in range(len(result_arg_1[0]["result"])):
+                    new_result_temp[i] = random_binary_string
+               result_expand.append(new_result_temp)
+               
+               for i in range(len(result_expand)):
+                    for j in range(len(result_arg_2)):
+                         assert len(result_expand[i]) == len(result_arg_2[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_expand[i])):
+                              if((result_expand[i][k]!=result_arg_2[j]["result"][k]) or (result_arg_2[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_and(result_expand[i][k], result_arg_2[j]["result"][k], bit_width=None) 
+                         result_temp["result"] = temp_dict
+                         result_temp[result_arg_1[0]["result"][random_key_1]] = result_expand[i]
+                    
+                         for previous_const, value in result_arg_2[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+          
+          elif('const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_2) == 1
+               if(result_arg_1[0]["result"][random_key_2]=='-1'):
+                    width = 1
+               else:
+                    width = len(result_arg_1[0]["result"][random_key_2])
+               random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+               # candidate = cand_masking[width]
+               # for cand in candidate:
+               new_result_temp = {}
+               for i in range(len(result_arg_2[0]["result"])):
+                    new_result_temp[i] = random_binary_string
+               result_expand.append(new_result_temp)
+               
+               for i in range(len(result_expand)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_expand[i]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_expand[i])):
+                              if((len(result_expand[i][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_1[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_and(result_arg_1[j]["result"][k], result_expand[i][k], bit_width=None) 
+                         result_temp["result"] = temp_dict
+                         result_temp[result_arg_2[0]["result"][random_key_1]] = result_expand[i]
+                    
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp)          
+          else:
+               for i in range(len(result_arg_2)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_arg_2[i]["result"]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_arg_2[i]["result"])):
+                              if((len(result_arg_2[i]["result"][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_2[i]["result"][k]=='-1')
+                                 or (result_arg_1[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_and(result_arg_1[j]["result"][k], result_arg_2[i]["result"][k], bit_width=None)
+
+                         result_temp["result"] = temp_dict
+                         for previous_const, value in result_arg_2[i].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp)       
+     
+     elif(symbol == 'bvor'):
+          random_key_1 = random.choice(list(result_arg_1[0]["result"].keys()))
+          random_key_2 = random.choice(list(result_arg_2[0]["result"].keys()))
+          ## Having const
+          if('const' in result_arg_1[0]["result"][random_key_1] and 'const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_1) == 1
+               assert len(result_arg_2) == 1
+               temp_dict = {}
+               result_temp = {}  
+               for k in range(len(result_arg_1[0]["result"])):
+                    temp_dict[k] = result_arg_1[0]["result"][k]
+               result_temp["result"] = temp_dict
+               result.append(result_temp) 
+          elif('const' in result_arg_1[0]["result"][random_key_1]):
+               assert len(result_arg_1) == 1
+               if(result_arg_2[0]["result"][random_key_2]):
+                    width = 1
+               else:
+                    width = len(result_arg_2[0]["result"][random_key_2])
+               # assert width in cand_masking
+               random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+               # candidate = cand_masking[width]
+               # for cand in candidate:
+               new_result_temp = {}
+               for i in range(len(result_arg_1[0]["result"])):
+                    new_result_temp[i] = random_binary_string
+               result_expand.append(new_result_temp)
+               
+               for i in range(len(result_expand)):
+                    for j in range(len(result_arg_2)):
+                         assert len(result_expand[i]) == len(result_arg_2[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_expand[i])):
+                              if((len(result_expand[i][k]) != len(result_arg_2[j]["result"][k])) or (result_arg_2[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_or(result_expand[i][k], result_arg_2[j]["result"][k], bit_width=None) 
+                         result_temp["result"] = temp_dict
+                         result_temp[result_arg_1[0]["result"][random_key_1]] = result_expand[i]
+                    
+                         for previous_const, value in result_arg_2[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+          
+          elif('const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_2) == 1
+               if(result_arg_1[0]["result"][random_key_2]=='-1'):
+                    width = 1 
+               else:
+                    width = len(result_arg_1[0]["result"][random_key_2])
+               random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+               # candidate = cand_masking[width]
+               # for cand in candidate:
+               new_result_temp = {}
+               for i in range(len(result_arg_2[0]["result"])):
+                    new_result_temp[i] = random_binary_string
+               result_expand.append(new_result_temp)
+               
+               for i in range(len(result_expand)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_expand[i]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_expand[i])):
+                              if((len(result_expand[i][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_1[j]["result"][k]!='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_or(result_arg_1[j]["result"][k], result_expand[i][k], bit_width=None) 
+                         result_temp["result"] = temp_dict
+                         result_temp[result_arg_2[0]["result"][random_key_1]] = result_expand[i]
+                    
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp)          
+          else:
+               for i in range(len(result_arg_2)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_arg_2[i]["result"]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_arg_2[i]["result"])):
+                              if((len(result_arg_2[i]["result"][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_2[i]["result"][k]=='-1')
+                                 or (result_arg_1[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_or(result_arg_1[j]["result"][k], result_arg_2[i]["result"][k], bit_width=None)
+                         result_temp["result"] = temp_dict
+                         for previous_const, value in result_arg_2[i].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+     
+     elif(symbol == 'bvsub'):
+          random_key_1 = random.choice(list(result_arg_1[0]["result"].keys()))
+          random_key_2 = random.choice(list(result_arg_2[0]["result"].keys()))
+          ## Having const
+          if('const' in result_arg_1[0]["result"][random_key_1] and 'const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_1) == 1
+               assert len(result_arg_2) == 1
+               temp_dict = {}
+               result_temp = {}  
+               for k in range(len(result_arg_1[0]["result"])):
+                    temp_dict[k] = result_arg_1[0]["result"][k]
+               result_temp["result"] = temp_dict
+               result.append(result_temp) 
+
+          elif('const' in result_arg_1[0]["result"][random_key_1]):
+               assert len(result_arg_1) == 1
+               if(result_arg_2[0]["result"][random_key_2]=='-1'):
+                    width = 1
+               else:
+                    width = len(result_arg_2[0]["result"][random_key_2])
+               random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+               # candidate = cand_masking[width]
+               # for cand in candidate:
+               new_result_temp = {}
+               for i in range(len(result_arg_1[0]["result"])):
+                    new_result_temp[i] = random_binary_string
+               result_expand.append(new_result_temp)
+               
+               for i in range(len(result_expand)):
+                    for j in range(len(result_arg_2)):
+                         assert len(result_expand[i]) == len(result_arg_2[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_expand[i])):
+                              if(len(result_expand[i][k]) != len(result_arg_2[j]["result"][k]) or (result_arg_2[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_subtraction(result_expand[i][k], result_arg_2[j]["result"][k], bit_width=None) 
+                         result_temp["result"] = temp_dict
+                         result_temp[result_arg_1[0]["result"][random_key_1]] = result_expand[i]
+                    
+                         for previous_const, value in result_arg_2[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+          
+          elif('const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_2) == 1
+               if(result_arg_1[0]["result"][random_key_2]=='-1'):
+                    width = 1
+               else:
+                    width = len(result_arg_1[0]["result"][random_key_2])
+               random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+               # candidate = cand_masking[width]
+               # for cand in candidate:
+               new_result_temp = {}
+               for i in range(len(result_arg_2[0]["result"])):
+                    new_result_temp[i] = random_binary_string
+               result_expand.append(new_result_temp)
+               
+               for i in range(len(result_expand)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_expand[i]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_expand[i])):
+                              if((len(result_expand[i][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_1[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_subtraction(result_arg_1[j]["result"][k], result_expand[i][k], bit_width=None) 
+                         result_temp["result"] = temp_dict
+                         result_temp[result_arg_2[0]["result"][random_key_1]] = result_expand[i]
+                    
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp)          
+          else:
+               for i in range(len(result_arg_2)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_arg_2[i]["result"]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_arg_2[i]["result"])):
+                              if((len(result_arg_2[i]["result"][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_2[i]["result"][k]=='-1')
+                                 or (result_arg_1[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_subtraction(result_arg_1[j]["result"][k], result_arg_2[i]["result"][k], bit_width=None)
+                         result_temp["result"] = temp_dict
+                         for previous_const, value in result_arg_2[i].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+     
+     elif(symbol == 'bvadd'):          
+          random_key_1 = random.choice(list(result_arg_1[0]["result"].keys()))
+          random_key_2 = random.choice(list(result_arg_2[0]["result"].keys()))
+          if('const' in result_arg_1[0]["result"][random_key_1] and 'const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_1) == 1
+               assert len(result_arg_2) == 1
+               temp_dict = {}
+               result_temp = {}  
+               for k in range(len(result_arg_1[0]["result"])):
+                    temp_dict[k] = result_arg_1[0]["result"][k]
+               result_temp["result"] = temp_dict
+               result.append(result_temp) 
+          elif('const' in result_arg_1[0]["result"][random_key_1]):
+               assert len(result_arg_1) == 1
+               if(result_arg_2[0]["result"][random_key_2]=='-1'):
+                    width = 1
+               else:
+                    width = len(result_arg_2[0]["result"][random_key_2])
+               random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+               # candidate = cand_masking[width]
+               # for cand in candidate:
+               new_result_temp = {}
+               for i in range(len(result_arg_1[0]["result"])):
+                    new_result_temp[i] = random_binary_string
+               result_expand.append(new_result_temp)
+               
+               for i in range(len(result_expand)):
+                    for j in range(len(result_arg_2)):
+                         assert len(result_expand[i]) == len(result_arg_2[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_expand[i])):
+                              if((len(result_expand[i][k]) != len(result_arg_2[j]["result"][k])) or (result_arg_2[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_addition(result_expand[i][k], result_arg_2[j]["result"][k], bit_width=None) 
+                         result_temp["result"] = temp_dict
+                         result_temp[result_arg_1[0]["result"][random_key_1]] = result_expand[i]
+                    
+                         for previous_const, value in result_arg_2[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+          
+          elif('const' in result_arg_2[0]["result"][random_key_2]):
+               assert len(result_arg_2) == 1
+               if(result_arg_1[0]["result"][random_key_2]=='-1'):
+                    width = 1
+               else: 
+                    width = len(result_arg_1[0]["result"][random_key_2])
+               random_binary_string = ''.join(random.choice(['0', '1']) for _ in range(width))
+               # candidate = cand_masking[width]
+               # for cand in candidate:
+               new_result_temp = {}
+               for i in range(len(result_arg_2[0]["result"])):
+                    new_result_temp[i] = random_binary_string
+               result_expand.append(new_result_temp)
+               
+               for i in range(len(result_expand)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_expand[i]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_expand[i])):
+                              if((len(result_expand[i][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_1[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_addition(result_expand[i][k], result_arg_1[j]["result"][k], bit_width=None) 
+                         result_temp["result"] = temp_dict
+                         result_temp[result_arg_2[0]["result"][random_key_1]] = result_expand[i]
+                    
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp)          
+          else:
+               for i in range(len(result_arg_2)):
+                    for j in range(len(result_arg_1)):
+                         assert len(result_arg_2[i]["result"]) == len(result_arg_1[j]["result"])
+                         temp_dict = {}
+                         result_temp = {}
+                         for k in range(len(result_arg_2[i]["result"])):
+                              if((len(result_arg_2[i]["result"][k]) != len(result_arg_1[j]["result"][k])) or (result_arg_2[i]["result"][k]=='-1')
+                                 or (result_arg_1[j]["result"][k]=='-1')):
+                                   temp_dict[k] = '-1'
+                              else:
+                                   temp_dict[k] = bitwise_addition(result_arg_2[i]["result"][k], result_arg_1[j]["result"][k], bit_width=None)
+                         
+                         result_temp["result"] = temp_dict
+                         for previous_const, value in result_arg_2[i].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         for previous_const, value in result_arg_1[j].items():
+                              if previous_const == "result":
+                                   continue
+                              result_temp[previous_const] = value
+                         result.append(result_temp) 
+     
+
+     assert (len(result)!=0)
+     return result
+
+
 def inner_fault_coverage(fault_pattern, pg, generate_tree):
      symbol = generate_tree.app
      result = {}
@@ -1331,7 +1994,7 @@ def check_imply_and_save(generated_tree,data_temperal,var_list,pg):
           assert len(keys_to_delete)==0                  
 
 
-def reward_cal(data_smt, filename, pg , generated_tree, const):
+def reward_cal(iteration, data_smt, filename, pg , generated_tree, const):
 
      # x = SyExp("x[14:0]",[])
      # y = SyExp("y[14:0]",[])
@@ -1352,7 +2015,10 @@ def reward_cal(data_smt, filename, pg , generated_tree, const):
      var_all = var_left + var_right
      # is_symmetric = deduction_symmetric(generated_tree, None, pg, 0)
      if(reward_deduction == -1):
-          return reward_same, -1
+          if(cmd_args.remove_deduction_engine):
+               return 0,0
+          else:
+               return reward_same, -1
      # elif(is_mismatch ==True or is_symmetric==True or reward_const == -1):
      #      conditions = [is_mismatch, is_symmetric, reward_const == -1]
      #      if conditions.count(True) == 1:
@@ -1383,11 +2049,17 @@ def reward_cal(data_smt, filename, pg , generated_tree, const):
                          continue
                     else:
                          data_temperal[key] = value
-               if(generated_tree.to_py(data_temperal) not in mining_collection):
-                    smtlib2 = generated_tree.to_smt_lib2(var_all, data_temperal,"")
-                    result_boolector = check_boolector(smtlib2, var_all, data_temperal)                    
+               smtlib2 = generated_tree.to_smt_lib2(var_all, data_temperal,"")
+               result_boolector = check_boolector(smtlib2, var_all, data_temperal)    
+               if("unsat" not in result_boolector):
+                    if(cmd_args.cal_pass_at_k):
+                         cal_pass_at_k(iteration,filename)   
+               if((generated_tree.to_py(data_temperal) not in mining_collection) or cmd_args.run_ablition):
+                
                     if("unsat" in result_boolector):
-                         reward_single = - 1
+                         if(cmd_args.remove_deduction_engine==False):
+                              reward_single = - 1
+                         # continue
                     else:
                          assert result_boolector=="sat\n"
                          if cmd_args.use_smt_switch:
@@ -1395,7 +2067,7 @@ def reward_cal(data_smt, filename, pg , generated_tree, const):
                               # print("The inner coverage is %.2f" %((1 - miss_fault / len(data_smt.fault_pattern[index]))))
                               write_to_file(index,generated_tree,None, data_temperal)
                          else:
-                              
+                           
                               print("Found a potential solution: " + generated_tree.to_py(data_temperal))
                               write_to_smt(smtlib2)
                               random_key = random.choice(list(data_temperal.keys()))
@@ -1403,6 +2075,7 @@ def reward_cal(data_smt, filename, pg , generated_tree, const):
                               if("unknown" in result):
                                    print("Found a solution: " + generated_tree.to_py(data_temperal))
                                    # print("The inner coverage is %.4f" %((1 - miss_fault / len(data_smt.fault_pattern[index]))))
+
                                    write_to_file(index,generated_tree, None, data_temperal)
                                    check_imply_and_save(generated_tree,data_temperal,var_all,pg)
                                    # else:
@@ -1418,32 +2091,11 @@ def reward_cal(data_smt, filename, pg , generated_tree, const):
                                         write_to_verilog(formula_info[0])
                                    if(len(mining_collection)==5):
                                         sys.exit()
-                                   # if cmd_args.exit_on_find:
-                                   #      ##Now we need to check whether this assignment can block the counterexample
-                                   #      cex_copy = data_smt.cex.copy()
-                                   #      for key, value in res.items():
-                                   #           if(key == "result"):
-                                   #                continue
-                                   #           else:
-                                   #                random_key_2 = random.choice(list(value.keys()))
-                                   #                cex_copy[key] = value[random_key_2]
-                                   #      print("Start to check whether the assertion can block the cex")
-                                   #      result = inner_fault_coverage(cex_copy, pg, generated_tree)
-                                   #      if(result[0]=='1'):
-                                   #           print("The counterexample cannot be blocked, now let\'s try to connect with previous assertion")
-                                   #           concat_previous_aassertion(cex_copy,pg,generated_tree, data_temperal,None)
-                                   #      else:
-                                   #           smtlib2 = generated_tree.to_smt_lib2(var_all, data_temperal, "RTL.")
-                                   #           path_result = os.path.join(cmd_args.data_root,"result.txt")
-                                   #           with open(path_result, 'w') as f:
-                                   #                f.write("find_assumption")
-                                   #           write_assumption(smtlib2)
-                                   #           sys.exit()
-                                         
+               reward_total += reward_single                           
           else:
                reward_total = reward_single + reward_total
      
-     return reward_total / len(results) + reward_same, 0
+     return (reward_total / len(results)) + reward_same, 0
 
 
      
@@ -1605,10 +2257,121 @@ def reward_cal(data_smt, filename, pg , generated_tree, const):
                               print("The potential solution is not passed by BMC ")
                
 
+def cal_pass_at_k(iteration,filename):
+     assert cmd_args.pass_at_k_file!=None
+     with open(cmd_args.pass_at_k_file, 'a+') as f:
+          f.write("pass at iteration: " + str(iteration) + "\n")
+
+
+
+def reward_const_random(iteration, data_smt, filename, pg , generated_tree):
+
+     # x = SyExp("x[10:0]",[])
+     # y = SyExp("const0",[])
+     # x_y = SyExp("eq",[x,y])
+     # const = SyExp("const_1",[])
+     # generated_tree = SyExp("eq",[x_y,const])
+     reward_same = decduction_same_symbol(generated_tree,pg)
+     width, is_mismatch = width_match(pg,generated_tree,data_smt.formula_dict[filename.replace('.sl', '')])
+     reward_deduction = 0
+     if(is_mismatch==False):
+          if filename.replace('.sl', '') in data_smt.cand_masking:
+               reward_deduction,width_mask = deduction_const_connection(generated_tree,pg,data_smt.formula_dict[filename.replace('.sl', '')],data_smt.cand_masking[filename.replace('.sl', '')])
+          else:
+               reward_deduction,width_mask = deduction_const_connection(generated_tree,pg,data_smt.formula_dict[filename.replace('.sl', '')],{})
+     else:
+          reward_deduction = -1     
+     var_left, var_right = get_all_var(generated_tree,pg)
+     var_all = var_left + var_right
+     index = filename.replace('.sl', '')
+     # is_symmetric = deduction_symmetric(generated_tree, None, pg, 0)
+     if(reward_deduction == -1):
+          if(cmd_args.remove_deduction_engine):
+               return 0,0
+          else:
+               return reward_same, -1
+     # width, is_mismatch = width_match(pg,generated_tree,data_smt.formula_dict[filename.replace('.sl', '')])
+     # reward_deduction,width_mask = deduction_const_connection(generated_tree,pg,data_smt.formula_dict[filename.replace('.sl', '')],{})
+     # var_left, var_right = get_all_var(generated_tree,pg)
+     # var_all = var_left + var_right
+     # all_contain_const = all("const" in s  for s in var_all)
      
+     # if all_contain_const or reward_deduction==-1 or is_mismatch:
+     #      return 0, 0
+     else:
+          results = recursive_calculation_random(data_smt.formula_dict[index] , pg, generated_tree,{}, {},{})
+          global mining_collection
+          reward_total = 0
+          for res in results:
+               reward_single = 0
+               for key, value in res["result"].items():
+                    if(int(value)==1):
+                         reward_single = reward_single + 1
+               reward_single = reward_single/len(res["result"].items())
+               
+               data_temperal = data_smt.formula_dict[index].copy()
+               if(reward_single>0.999999):
+                         ## Now we should start the fault coverage analysis
+                    for key, value in res.items():
+                         if(key == "result"):
+                              continue
+                         else:
+                              data_temperal[key] = value
+                    smtlib2 = generated_tree.to_smt_lib2(var_all, data_temperal,"")
+                    result_boolector = check_boolector(smtlib2, var_all, data_temperal)    
+                    if("unsat" not in result_boolector):
+                         assert result_boolector=="sat\n"
+                         if(cmd_args.cal_pass_at_k):
+                              cal_pass_at_k(iteration,filename)   
+                    if((generated_tree.to_py(data_temperal) not in mining_collection) or cmd_args.run_ablition):
+                         # smtlib2 = generated_tree.to_smt_lib2(var_all, data_temperal,"")
+                         # result_boolector = check_boolector(smtlib2, var_all, data_temperal)                    
+                         if("unsat" in result_boolector):
+                              if(cmd_args.remove_deduction_engine):
+                                   reward_single = - 1 
+                         else:
+                              assert result_boolector=="sat\n"
+                              if cmd_args.use_smt_switch:
+                                   print("Found a solution: " + generated_tree.to_py(data_temperal))
+                                   # print("The inner coverage is %.2f" %((1 - miss_fault / len(data_smt.fault_pattern[index]))))
+                                   write_to_file(index,generated_tree,None, data_temperal)
+                              else:
+                              
+                                   print("Found a potential solution: " + generated_tree.to_py(data_temperal))
+                                   write_to_smt(smtlib2)
+                                   random_key = random.choice(list(data_temperal.keys()))
+                                   result,assertion_path = run_pono(len(data_temperal[random_key]))
+                                   if("unknown" in result):
+                                        print("Found a solution: " + generated_tree.to_py(data_temperal))
+                                        # print("The inner coverage is %.4f" %((1 - miss_fault / len(data_smt.fault_pattern[index]))))
+
+                                        write_to_file(index,generated_tree, None, data_temperal)
+                                        check_imply_and_save(generated_tree,data_temperal,var_all,pg)
+                                        # else:
+                                        #      os.remove(assertion_path)
+                                        #      mining_collection[generated_tree.to_py(data_temperal)] = mining_collection[generated_tree.to_py(data_temperal)] +1
+                                        
+                                        shutil.rmtree(os.path.join(cmd_args.data_root,'assertion'))
+                                        if(os.path.exists(os.path.join(cmd_args.data_root,'verilog_assertion'))):
+                                             shutil.rmtree(os.path.join(cmd_args.data_root,'verilog_assertion'))
+                                        for formula,formula_info in mining_collection.items():
+                                             smtlib2 = formula_info[0].to_smt_lib2(formula_info[1], data_temperal,"")
+                                             write_to_smt(smtlib2)
+                                             write_to_verilog(formula_info[0])
+                                        if(len(mining_collection)==5):
+                                             sys.exit()
+                    reward_total += reward_single                           
+               else:
+                    reward_total = reward_single + reward_total
+          if(cmd_args.remove_deduction_engine and cmd_args.remove_deduction_engine
+               and cmd_args.use_random_action):
+               return (reward_total / len(results)) + reward_same, 0
+          else:
+               return 0,0
      
 
 def write_to_file(filename,generated_tree,fault_coverage,var_value={}):
+     
      if cmd_args.use_smt_switch:
           path = os.path.join(cmd_args.data_root,filename+".txt")
      else:

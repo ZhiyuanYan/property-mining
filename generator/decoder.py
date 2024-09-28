@@ -161,11 +161,15 @@ class RecursiveDecoder(nn.Module):
             picked = torch.tensor(supervised_label).to(device).view(-1)
             # scores = torch.exp(ll) * (1 - eps) + eps / ll.shape[1]
             # _, picked = torch.max(ll, 1)
+        elif cmd_args.use_random_action:
+            scores = torch.exp(ll) * (1 - eps) + eps / ll.shape[1]
+            picked = torch.randint(0, scores.size(1), (1,)).to(device)
         elif use_random:
             scores = torch.exp(ll) * (1 - eps) + eps / ll.shape[1]
             # scores_new = torch.ones_like(scores) * 0.5
             picked = torch.multinomial(scores, 1)
         
+            
         else:
             _, picked = torch.max(ll, 1)
 

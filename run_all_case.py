@@ -19,31 +19,25 @@ def print_output(stream):
 
 def terminate_process_group(pid):
     try:
-        # 发送SIGTERM信号到整个进程组
         os.killpg(os.getpgid(pid), signal.SIGTERM)
     except OSError as e:
-        # 如果进程组已经被终止，则忽略该错误
         if e.errno != errno.ESRCH:
             raise
 
 def create_combinations_folder(src_folder, max_files=5):
-    # 获取源文件夹中的所有文件
     assertion_path = os.path.join(src_folder,"assertion")
     files = [f for f in os.listdir(assertion_path) if os.path.isfile(os.path.join(assertion_path, f))]
 
-    # 确保文件数量不超过限制
     # if len(files) > max_files:
     #     print(f"Folder has more than {max_files} files. Exiting.")
     #     return
     folder_collect = []
-    # 处理文件数量为一个或两个的情况
     if len(files) <= 2:
         for i, file in enumerate(files, 1):
             new_folder = os.path.join(src_folder, f"single_{i}")
             os.makedirs(new_folder, exist_ok=True)
             shutil.copy(os.path.join(assertion_path, file), new_folder)
             folder_collect.append(new_folder)
-        # 如果文件数为两个，创建一个包含两个文件的组合文件夹
         if len(files) == 2:
             new_folder = os.path.join(src_folder, "combo")
             os.makedirs(new_folder, exist_ok=True)
@@ -51,7 +45,6 @@ def create_combinations_folder(src_folder, max_files=5):
                 shutil.copy(os.path.join(assertion_path, file), new_folder)
             folder_collect.append(new_folder)
 
-    # 处理文件数量超过两个的情况
     else:
         # combo_num = 2 if len(files) > 2 else 1
         for i, combo in enumerate(combinations(files, 2), 1):
@@ -79,7 +72,7 @@ def run_mining(command_to_run):
     )
     try:
         # 等待子进程完成或超时
-        stdout, stderr = process.communicate(timeout=1000)
+        stdout, stderr = process.communicate(timeout=600)
         # 这里根据实际需求处理输出
         if stderr:  # 如果存在标准错误输出
             print("Error detected. STDERR:\n", stderr)
@@ -87,7 +80,6 @@ def run_mining(command_to_run):
             return "Error"
         return stdout.deocde()
     except subprocess.TimeoutExpired:
-        # 如果超时，则杀死进程并获取到目前为止的输出
         os.killpg(os.getpgid(process.pid), signal.SIGTERM)
         # process.kill()
         stdout, stderr = process.communicate()
@@ -97,7 +89,7 @@ def run_mining(command_to_run):
 
 def run_pono(folder_name, btor_file, status_dict):
     global global_pids
-    command_to_run_pono = ["./cosa2/build/pono", "--assertion-folder", folder_name,
+    command_to_run_pono = ["./build/pono", "--assertion-folder", folder_name,
                            "-e", "ic3bits", "--bound", "1000", "--print-wall-time", btor_file]
 
     process = subprocess.Popen(command_to_run_pono, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -121,19 +113,17 @@ def run_pono(folder_name, btor_file, status_dict):
             time.sleep(0.5)  # Adjust the sleep time as needed
 
         stdout, stderr = process.communicate(timeout=1)  # Short timeout for final communication
-        return stdout.decode(), process.pid
+        return stdout.decode(), process.pid, command_to_run_pono
     except subprocess.TimeoutExpired:
         process.kill()
         stdout, stderr = process.communicate()
-        return stdout.decode(), process.pid
+        return stdout.decode(), process.pid, command_to_run_pono
 
 def is_folder_empty(folder_path):
     """Check if a folder is empty."""
     if os.path.exists(folder_path) and os.path.isdir(folder_path):
-        # listdir()返回文件夹中条目的列表
         return not os.listdir(folder_path)
     else:
-        # 如果路径不存在或不是一个文件夹，则抛出异常
         raise ValueError("Provided path is not a valid folder")
 
 def run_pono_single(command_to_run_pono):
@@ -180,16 +170,19 @@ def run_all_cases(path):
         print("Now running on pono: %s"%(path))
         
         out = None
+        command = None
         def on_complete(result):
             nonlocal out
-            if out is None:  # 仅在 result 未设置时设置结果
+            nonlocal command 
+            if out is None: 
                 out = result[0]
+                command = result[2]
             print(f"Process complete with result: {result[0]}")
             
-            pool.terminate()  # 终止其他进程
-            for folder in divided_path:
-                if os.path.exists(folder):
-                    shutil.rmtree(folder)
+            pool.terminate() 
+            # for folder in divided_path:
+            #     if os.path.exists(folder):
+            #         shutil.rmtree(folder)
         assertion_path = os.path.join(path,subfolder_name)
         if subfolder_name in os.listdir(path) and is_folder_empty(assertion_path)==False:
             # assertion_path = os.path.join(path,subfolder_name)
@@ -204,10 +197,7 @@ def run_all_cases(path):
                     break  # Stop creating new processes if termination signal is set
                 pool.apply_async(run_pono, args=(folder, btor_files[0], status_dict), callback=on_complete)
 
-            # 关闭进程池，不再接受新的任务
             pool.close()
-
-            # 等待所有任务完成，或者在 callback 中终止
             pool.join()
             try:
                 # Recheck if the process is running
@@ -237,7 +227,10 @@ def run_all_cases(path):
             file.write("The mining time is: %.4f\n"%(time_end-time_start))
             if("unsat" in out):
                 print("Successful: %s"%(path))
-                file.write(out+"\n")
+                if(command is not None):
+                    file.write(out+"\n" + command[2] + "\n")
+                else:
+                    file.write(out + "\n")
             else:
                 print("Unsuccessful: %s"%(path))
                 file.write("This cannot be checked\n")                

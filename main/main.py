@@ -26,21 +26,11 @@ def main():
     np.random.seed(cmd_args.seed)
     torch.manual_seed(cmd_args.seed)
     tic()
-    device = torch.device("cuda:1" if cmd_args.use_cuda else "cpu")
+    device = torch.device("cuda:0" if cmd_args.use_cuda else "cpu")
     os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:1000'    
     # use batchsize=1 for simplicity
     assert cmd_args.rl_batchsize == 1
 
-    # is training meta-learner?
-    is_meta_learner = True
-    # if cmd_args.single_sample is None:
-    #     # assert cmd_args.exit_on_find == 0
-    #     assert cmd_args.tune_test == 0
-    #     is_meta_learner = True
-
-    #     tqdm.write('learning meta learner')
-    # else:
-        # if using pre-train for single_sample
     if cmd_args.tune_test == 1:
         assert os.path.isfile(cmd_args.tune_test_encoder)
         assert os.path.isfile(cmd_args.tune_test_decoder)
@@ -134,7 +124,7 @@ def main():
                 # embedding_offset += specsample.spectree.numOf_nodes
                 if cmd_args.use_supervise == False:
                     # start = time.time()
-                    total_loss, rudder_loss, best_reward, best_tree, acc_reward = rollout(specsample, data_smt, mem_batch, decoder,
+                    total_loss, rudder_loss, best_reward, best_tree, acc_reward = rollout(k, specsample, data_smt, mem_batch, decoder,
                                                                                       rudder,
                                                                                       (epoch_acc_reward / (k + 1)),device,
                                                                                       num_episode=cmd_args.num_episode,
@@ -169,16 +159,15 @@ def main():
             pbar.set_description('avg reward: %.4f, avg loss: %.4f' % (epoch_acc_reward / (k + 1),avg_loss))
 
 
-        if is_meta_learner:
-            if epoch % 100 == 0:
-                state_dict_encoder = {"net": mem_encoder, "optimizer": optimizer, "epoch": epoch}
-                torch.save(state_dict_encoder, cmd_args.data_root + '/mem_encoder_' + str(epoch)+'.pth')
-                torch.save(decoder, cmd_args.data_root + '/decoder_' + str(epoch)+'.pth')
+        if epoch % 100 == 0:
             state_dict_encoder = {"net": mem_encoder, "optimizer": optimizer, "epoch": epoch}
-            torch.save(state_dict_encoder, cmd_args.data_root + '/mem_encoder.pth')
-            torch.save(decoder, cmd_args.data_root + '/decoder.pth')
-            if cmd_args.use_rudder == 1:
-                torch.save(rudder.state_dict(), cmd_args.data_root + '/rudder')
+            torch.save(state_dict_encoder, cmd_args.data_root + '/mem_encoder_' + str(epoch)+'.pth')
+            torch.save(decoder, cmd_args.data_root + '/decoder_' + str(epoch)+'.pth')
+        state_dict_encoder = {"net": mem_encoder, "optimizer": optimizer, "epoch": epoch}
+        torch.save(state_dict_encoder, cmd_args.data_root + '/mem_encoder.pth')
+        torch.save(decoder, cmd_args.data_root + '/decoder.pth')
+        if cmd_args.use_rudder == 1:
+            torch.save(rudder.state_dict(), cmd_args.data_root + '/rudder')
 
         # tinytest for every 100 epochs
         # specsample_ls = dataset.sample_minibatch(1, replacement=True)
