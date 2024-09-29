@@ -7,7 +7,6 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
 
-from common.checker import eval_result
 from common.cmd_args import cmd_args
 from common.spec_tree import is_tree_complete
 from parser_syg.sygus_parser import SyExp
@@ -45,7 +44,7 @@ class RLEnv(object):
     def get_spec_embedding(self):
         return self.pg.spec_embedding
 
-
+## We do not use the rudder
 def rollout(k, specsample, data_smt ,mem, decoder, rudder, avg_return, device ,num_episode, use_random, eps):
 
     total_loss = 0.0
