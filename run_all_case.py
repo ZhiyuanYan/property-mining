@@ -89,7 +89,7 @@ def run_mining(command_to_run):
 
 def run_pono(folder_name, btor_file, status_dict):
     global global_pids
-    command_to_run_pono = ["./build/pono", "--assertion-folder", folder_name,
+    command_to_run_pono = ["cosa2/build/pono", "--assertion-folder", folder_name,
                            "-e", "ic3bits", "--bound", "1000", "--print-wall-time", btor_file]
 
     process = subprocess.Popen(command_to_run_pono, stdout=subprocess.PIPE, stderr=subprocess.PIPE)

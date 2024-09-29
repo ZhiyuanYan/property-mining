@@ -10,12 +10,10 @@ from itertools import chain
 from tqdm import tqdm
 # sys.path.append('/data/zhiyuany/property_mining')
 from common.cmd_args import cmd_args, tic, toc
-from common.checker import eval_result
 from common.dataset import Dataset
 from common.utils import stat_counter
 from generator.rl import RLEnv, rollout, actor_critic_loss,supervised_learning
-from spec_encoder.embedding import LSTMEmbed, EmbedMeanField
-from rudder.rudder import RewardRedistributionLSTM
+from spec_encoder.embedding import  EmbedMeanField
 import generator.decoder as decoder_rec
 import common.constants as constants
 from data_from_smt.parser import data_from_smt
@@ -56,9 +54,6 @@ def main():
     numOf_node_type = constants.NUM_OF_TYPE
 
     # define rudder
-    rudder = None
-    if cmd_args.use_rudder == 1:
-        rudder = RewardRedistributionLSTM(cmd_args.embedding_size)
 
     # define mem_encoder, decoder and opt
     # mem_encoder = LSTMEmbed(cmd_args.embedding_size, numOf_node_type)
@@ -71,18 +66,14 @@ def main():
         decoder = torch.load(cmd_args.tune_test_decoder)
         mem_encoder = mem_encoder.to(device)
         decoder = decoder.to(device)
-        if cmd_args.use_rudder == 1:
-            rudder.load_state_dict(torch.load(cmd_args.data_root + '/rudder'))
     else:
         mem_encoder = EmbedMeanField(cmd_args.embedding_size, len(dataset.node_type_dict), device,max_lv=cmd_args.s2v_level)
         mem_encoder = mem_encoder.to(device)
         
         decoder_class = getattr(decoder_rec, cmd_args.decoder_model)
-        decoder = decoder_class(cmd_args.embedding_size*2, rudder)
+        decoder = decoder_class(cmd_args.embedding_size*2, None)
         decoder = decoder.to(device)
     params = [mem_encoder.parameters(), decoder.parameters()]
-    if cmd_args.use_rudder == 1:
-        params.append(rudder.parameters())
     
     start_epoch = 0
     if cmd_args.tune_test == 1:
@@ -125,7 +116,7 @@ def main():
                 if cmd_args.use_supervise == False:
                     # start = time.time()
                     total_loss, rudder_loss, best_reward, best_tree, acc_reward = rollout(k, specsample, data_smt, mem_batch, decoder,
-                                                                                      rudder,
+                                                                                      None,
                                                                                       (epoch_acc_reward / (k + 1)),device,
                                                                                       num_episode=cmd_args.num_episode,
                                                                                       use_random=True, eps=eps)
@@ -146,9 +137,6 @@ def main():
             # if epoch_best_loss<
             optimizer.zero_grad()
             loss = batch_total_loss / cmd_args.rl_batchsize
-            if cmd_args.use_rudder == 1:
-                batch_rudder_loss /= cmd_args.rl_batchsize
-                loss += batch_rudder_loss
             # start = time.time()
             loss.backward()
             # end = time.time()
@@ -166,8 +154,6 @@ def main():
         state_dict_encoder = {"net": mem_encoder, "optimizer": optimizer, "epoch": epoch}
         torch.save(state_dict_encoder, cmd_args.data_root + '/mem_encoder.pth')
         torch.save(decoder, cmd_args.data_root + '/decoder.pth')
-        if cmd_args.use_rudder == 1:
-            torch.save(rudder.state_dict(), cmd_args.data_root + '/rudder')
 
         # tinytest for every 100 epochs
         # specsample_ls = dataset.sample_minibatch(1, replacement=True)
@@ -201,7 +187,7 @@ def main():
                 idx = specsample_ls[i].filename.replace(".sl", "")
                 mem_batch = mem_encoder(specsample,data_smt.formula_dict_tensor[idx])
                 total_loss, rudder_loss, best_reward, best_tree, acc_reward = rollout(specsample, data_smt, mem_batch, decoder,
-                                                                                            rudder,
+                                                                                            None,
                                                                                             (epoch_acc_reward / (k + 1)),device,
                                                                                             num_episode=cmd_args.num_episode,
                                                                                             use_random=True, eps=eps)

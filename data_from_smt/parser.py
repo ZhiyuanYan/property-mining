@@ -21,10 +21,8 @@ class data_from_smt(object):
           self.cand_const_sub = {}
           
      def static_analysis_add_sub(self,dic_value,current_formula):
-          # 获取每个变量的位宽
           bit_widths = {key: len(dic_value[key][0]) for key in dic_value}
 
-          # 根据位宽将变量分组
           bit_width_groups = {}
           for key, bit_width in bit_widths.items():
                if bit_width not in bit_width_groups:
@@ -181,14 +179,11 @@ class data_from_smt(object):
                          current_variables[variable_name].append(variable_value)
                     else:
                          current_variables[variable_name] = [variable_value]
+          
+          ## There is still has the last formula
           self.formula_dict[current_formula] = current_variables.copy()
           self.formula_dict_label[current_formula] = label.copy()
           self.static_analysis_add_sub(self.formula_dict[current_formula],current_formula)
-          # self.load_to_combinations_dict(current_formula)
-          # for key in  self.formula_dict.keys():
-          #      self.generate_fault_pattern(self.formula_dict[key],{},0,key)
-          
-          # self.enlarge_waveform()
      
      def parse_ground_truth(self,name):
           name = separate_p(name)
