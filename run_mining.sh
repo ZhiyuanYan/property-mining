@@ -14,9 +14,9 @@ python3 run.py -data_root $arg1  \
                -exit_on_find 0 \
                -solution_path mining_collection\
                -use_cuda \
-               -tune_test 1\
-               -tune_test_encoder ./pretraining_from_smt/mem_encoder.pth\
-               -tune_test_decoder ./pretraining_from_smt/decoder.pth\
+               -tune_test 0\
+            #    -tune_test_encoder ./pretraining_from_smt/mem_encoder.pth\
+            #    -tune_test_decoder ./pretraining_from_smt/decoder.pth\
                -reward_result_path data_collection_symbols_const_epoch_reward.txt
 
 # source activate metal_env
