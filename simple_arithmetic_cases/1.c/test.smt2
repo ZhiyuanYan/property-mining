@@ -1,0 +1,1 @@
+(define-fun assertion.0 ((x (_ BitVec 15)) (y (_ BitVec 15)) ) Bool (bvule ((_ extract 14 0) y) ((_ extract 14 0) x)))

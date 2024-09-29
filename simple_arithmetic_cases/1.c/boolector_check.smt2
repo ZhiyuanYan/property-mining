@@ -1,0 +1,5 @@
+(define-fun assertion.0 ((|y| (_ BitVec 15)) (|x| (_ BitVec 15)) ) Bool (bvule (bvor (bvadd ((_ extract 14 0) |y|) ((_ extract 14 0) |x|)) (bvand ((_ extract 14 0) |x|) ((_ extract 14 0) |y|))) #b100111010001101))
+(declare-const |y| (_ BitVec 15)) 
+(declare-const |x| (_ BitVec 15)) 
+(assert (not (assertion.0 |y| |x|)))
+(check-sat)

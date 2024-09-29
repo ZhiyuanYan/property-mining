@@ -1,0 +1,8 @@
+epoch: 0, average reward: -0.5153
+epoch: 1, average reward: -0.4526
+epoch: 2, average reward: -0.4598
+epoch: 3, average reward: -0.4201
+epoch: 4, average reward: -0.4517
+epoch: 5, average reward: -0.4703
+epoch: 0, average reward: -0.5247
+epoch: 1, average reward: -0.4654

@@ -1,0 +1,10 @@
+read_verilog -sv 15.c.v
+prep -top top
+flatten
+memory -nordff
+setundef -undriven -init -expose
+sim -clock clk  -reset rst -n 2 -w top
+delete -output
+techmap
+abc -fast -g AND
+write_aiger  -zinit 15.c.aig

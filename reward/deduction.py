@@ -166,7 +166,7 @@ def deduction_const_connection(generate_tree,pg,dictionary,const_masking):
                     else:
                          return reward,width_left                            
 
-def get_all_var(generate_tree,pg):
+def get_from_left_right(generate_tree,pg):
      symbol = generate_tree.app
      # assert symbol == 'eq' or 'uneq'
      left = []
@@ -177,24 +177,28 @@ def get_all_var(generate_tree,pg):
      elif(is_terminal(pg,generate_tree.args[0].app) and is_terminal(pg,generate_tree.args[1].app)):
           return [generate_tree.args[0].app],[generate_tree.args[1].app]
      elif(is_terminal(pg,generate_tree.args[0].app)):
-          right_1, right_2 = get_all_var(generate_tree.args[1],pg)
+          right_1, right_2 = get_from_left_right(generate_tree.args[1],pg)
           right = right_1 + right_2
           return [generate_tree.args[0].app],right
      elif(is_terminal(pg,generate_tree.args[1].app)):
-          left_1,left_2 = get_all_var(generate_tree.args[0],pg) 
+          left_1,left_2 = get_from_left_right(generate_tree.args[0],pg) 
           left  = left_1 + left_2
           return left, [generate_tree.args[1].app]
      else:
           assert len(generate_tree.args)==2
           
-          left_1,left_2 = get_all_var(generate_tree.args[0],pg) 
+          left_1,left_2 = get_from_left_right(generate_tree.args[0],pg) 
           left  = left_1 + left_2
-          right_1, right_2 = get_all_var(generate_tree.args[1],pg)
+          right_1, right_2 = get_from_left_right(generate_tree.args[1],pg)
           right = right_1 + right_2
 
      
           return left, right 
 
+def get_all_var(generate_tree,pg):
+     var_left, var_right = get_from_left_right(generate_tree,pg)
+     var_all = var_left + var_right
+     return var_all
 
 def width_match(pg, generate_tree,dictionary):
      symbol = generate_tree.app

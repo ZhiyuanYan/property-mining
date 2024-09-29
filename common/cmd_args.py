@@ -34,7 +34,7 @@ cmd_opt.add_argument('-eps', default=0.85, type=float, help='exploration constan
 cmd_opt.add_argument('-eps_decay', default=0.9999, type=float, help='exp decay of the exploration constant')
 cmd_opt.add_argument('-num_episode', default=10, type=int, help='how many episode to accumulate before training')
 
-cmd_opt.add_argument('-use_rudder', default=0, type=int, help='whether use rudder')
+# cmd_opt.add_argument('-use_rudder', default=0, type=int, help='whether use rudder')
 cmd_opt.add_argument('-ig_step', default=100, type=int, help='num of integrated gradient steps')
 cmd_opt.add_argument('-future_steps', default=5, type=int, help='num to look ahead in rudder aux/to clip IG to zero')
 
@@ -54,10 +54,8 @@ cmd_opt.add_argument('-use_cuda', action="store_true",
                         help="Use the GPU to run the model")
 cmd_opt.add_argument('-use_supervise', action="store_true",
                         help="Whether use supervised method to train")
-cmd_opt.add_argument('-remove_const_handling', action="store_true",
-                        help="Whether we use the pure random method to get the result.")
-cmd_opt.add_argument('-use_static_analysis', action="store_true",
-                        help="Whether we use the static analysis to get the result.")
+# cmd_opt.add_argument('-remove_const_handling', action="store_true",
+#                         help="Whether we use the pure random method to get the result.")
 cmd_opt.add_argument('-remove_deduction_engine', action="store_true",
                         help="Whether we use the deduction engine to get the result.")
 cmd_opt.add_argument('-use_random_action', action="store_true",
@@ -67,7 +65,7 @@ cmd_opt.add_argument('-use_smt_switch', action="store_true",
 cmd_opt.add_argument('-cal_pass_at_k', action="store_true",
                         help="Whether we calculate the pass@k")
 cmd_opt.add_argument('-run_ablition', action="store_true",
-                        help="Whether we calculate the pass@k")
+                        help="Whether we run the ablation study")
 cmd_opt.add_argument('-pass_at_k_file', default=None, help='store the pass@k in each iteration')
 cmd_opt.add_argument('-iteration', default=0, type=int,
                         help="The number of iteration of the CEGAR loop")

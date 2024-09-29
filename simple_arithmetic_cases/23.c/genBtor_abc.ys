@@ -1,0 +1,10 @@
+read_verilog -formal 23.c.v
+prep -top top
+flatten
+memory -nordff
+setundef -undriven -init -expose
+sim -clock clk  -reset rst -n 1 -w top
+delete -output
+techmap
+abc -fast -g AND
+write_aiger  -zinit 23.c.aig

@@ -109,10 +109,10 @@ class RecursiveDecoder(nn.Module):
         act_embedding = torch.index_select(avail_act_embedding, 0, act)
 
         # call RewardRedistributionLSTM for prediction
-        if cmd_args.use_rudder:
-            t = Variable(torch.Tensor([env.t]), requires_grad=False)
-            rr_lstm_input = torch.cat([self.state.detach(), act_embedding, t], dim=-1)
-            self.rr_lstm(rr_lstm_input)
+        # if cmd_args.use_rudder:
+        #     t = Variable(torch.Tensor([env.t]), requires_grad=False)
+        #     rr_lstm_input = torch.cat([self.state.detach(), act_embedding, t], dim=-1)
+        #     self.rr_lstm(rr_lstm_input)
 
         self.update_state(act_embedding)
 

@@ -1,0 +1,8 @@
+read_verilog -sv 15.c.v
+prep -top top
+flatten
+memory -nomap
+hierarchy -check
+setundef -undriven -init -expose
+sim -clock clk  -reset rst -n 2 -w top
+write_btor  -s 15.c.btor

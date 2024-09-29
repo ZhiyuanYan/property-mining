@@ -1,0 +1,8 @@
+read_verilog -formal fib_07.v
+prep -top top
+flatten
+memory -nomap
+hierarchy -check
+setundef -undriven -init -expose
+sim -clock clk  -reset rst -n 1 -w top
+write_btor  -s design.btor

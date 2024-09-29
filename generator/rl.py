@@ -63,8 +63,6 @@ def rollout(k, specsample, data_smt ,mem, decoder, rudder, avg_return, device ,n
         previous_reward_same = 0
         env = RLEnv(specsample)
         decoder.reset()
-        if cmd_args.use_rudder == 1:
-            rudder.reset()
 
         while not env.is_finished():
 
@@ -72,15 +70,15 @@ def rollout(k, specsample, data_smt ,mem, decoder, rudder, avg_return, device ,n
             # reward = eval_result(env.specsample, env.generated_tree) if env.is_finished() else 0.0
 
             
-            if(cmd_args.remove_const_handling):
-                if env.is_finished():
-                    reward,reward_exit = reward_const_random(k, data_smt, env.specsample.filename, env.specsample.pg, env.generated_tree) 
-                else: 
-                    reward = 0
-                    reward_exit = 0
-                if having_const== True:
-                    const = const + 1
-            elif cmd_args.remove_deduction_engine:
+            # if(cmd_args.remove_const_handling):
+            #     if env.is_finished():
+            #         reward,reward_exit = reward_const_random(k, data_smt, env.specsample.filename, env.specsample.pg, env.generated_tree) 
+            #     else: 
+            #         reward = 0
+            #         reward_exit = 0
+            #     if having_const== True:
+            #         const = const + 1
+            if cmd_args.remove_deduction_engine:
                 if env.is_finished():
                     reward,reward_exit = reward_cal(k, data_smt,env.specsample.filename, env.specsample.pg, env.generated_tree,const)
                 else: 
@@ -114,9 +112,9 @@ def rollout(k, specsample, data_smt ,mem, decoder, rudder, avg_return, device ,n
             env.t += 1
 
         true_return = np.sum(reward_list)
-        if cmd_args.use_rudder == 1:
-            rudder_loss += rudder.get_loss(reward_list)
-            reward_list = rudder.integrated_gradient(avg_return, true_return)
+        # if cmd_args.use_rudder == 1:
+        #     rudder_loss += rudder.get_loss(reward_list)
+        #     reward_list = rudder.integrated_gradient(avg_return, true_return)
 
         policy_loss, value_loss = actor_critic_loss(nll_list, value_list, reward_list,device)
         total_loss += policy_loss + value_loss
